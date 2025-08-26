@@ -6,14 +6,14 @@ from keras import Model
 # from keras import Sequential, layers, regularizers, optimizers
 # from keras.callbacks import EarlyStopping
 
-
+from sklearn.linear_model import LinearRegression
 
 def initialize_model(input_shape: tuple):
     #  -> Model:
     """
     Initialize the Neural Network with random weights
     """
-    model =None
+    model = LinearRegression()
     print("🎬 initialize_model starting ................\n")
     print(" 💤 TO DO   !!!!!!!!!!!!!! \n")
     print("🏁 initialize_model() done \n")
@@ -40,6 +40,7 @@ def train_model(model: Model, X=None, y=None):
     print("🎬 train_model starting ................\n")
     print(" 💤 TO DO   !!!!!!!!!!!!!! \n")
     metrics = None
+    model.fit(X, y)
     print("🏁 train_model() done \n")
 
     return model
@@ -52,7 +53,7 @@ def evaluate_model (model: Model, X=None, y=None):
 
     print("🎬 evaluate_model starting ................\n")
     print(" 💤 TO DO   !!!!!!!!!!!!!! \n")
-    metrics = None
+    metrics = model.evaluate(X, y)
     print("🏁 evaluate_model() done \n")
 
     return metrics
