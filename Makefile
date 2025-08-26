@@ -4,11 +4,13 @@ help:
 	@echo "  make requirments - Installer les dépendances"
 	@echo "  make clean       - Nettoyer les fichiers temporaires"
 	@echo "  make reinstall_package  - Réinstaller package"
-	@echo "  make test        - Exécuter les tests"
-	@echo "  make lint        - Vérifier la qualité du code"
-	@echo "  make data        - Télécharger les données"
+# 	@echo "  make test        - Exécuter les tests"
+# 	@echo "  make lint        - Vérifier la qualité du code"
+# 	@echo "  make data        - Télécharger les données"
 	@echo "  make process     - Traiter les données"
 	@echo "  make train       - Entraîner le modèle"
+	@echo "  make evaluate    - Evaluer le modèle"
+	@echo "  make run_all     - run in the order : preprocess -> train -> pred -> evaluate"
 	@echo "✅ Fin des Commandes !"
 
 requirments:
@@ -33,27 +35,49 @@ clean:
 	@rm -f **/*Zone.Identifier
 	@echo "✅ Nettoyage terminé!"
 
+
+
 test:
-	@echo "🔄 Début ..."
+	@echo "🔄 Start test ..."
 	@echo "To Do 🆘"
 	@echo "✅ End!"
 
 lint:
-	@echo "🔄 Début ..."
+	@echo "🔄 Start lint..."
 	@echo "To Do 🆘"
-	@echo "✅ End!"
+	@echo "✅ End lint!"
 
 data:
-	@echo "🔄 Début data load..."
+	@echo "🔄 Start data load..."
 	@echo "To Do 🆘 if necessary"
 	@echo "✅ End data load!"
 
 process:
-	@echo "🔄 Début process ..."
+	@echo "🔄 Start process ..."
 	@echo "To Do 🆘"
+	python -c 'from medium.interface.main import preprocess; preprocess()'
 	@echo "✅ End preocess!"
 
 train:
-	@echo "🔄 Début train ..."
+	@echo "🔄 Start train ..."
 	@echo "To Do 🆘"
+	python -c 'from medium.interface.main import train; train()'
 	@echo "✅ End train !"
+
+# pred:
+	@echo "🔄 start pred ..."
+	@echo "To Do 🆘"
+# 	python -c 'from medium.interface.main import pred; pred()'
+	@echo "✅ End train !"
+
+evaluate:
+	python -c 'from medium.interface.main import evaluate; evaluate()'
+
+run_all:
+	python -c 'from medium.interface.main import run_all; run_all()'
+
+# workflow:
+# 	PREFECT__LOGGING__LEVEL=${PREFECT_LOG_LEVEL} python -m medium.interface.workflow
+
+# as_service:
+# 	uvicorn medium.api.fast:app --reload
