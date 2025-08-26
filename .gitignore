@@ -1,5 +1,6 @@
 raw_data/
 .env
+.env.yaml
 .envrc
 
 # OS generated files #
