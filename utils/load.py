@@ -44,3 +44,26 @@ def load_json_from_files(filepath, num_lines=None):
 
     print(f"Loaded {len(records)} lines from {filepath}")
     return pd.DataFrame(records)
+
+
+
+def load_csv(filepath, num_lines=None):
+    """
+    Lit le fichier CSV et crée un DataFrame.
+
+    Args:
+        filepath (str): Chemin du fichier CSV
+        num_lines (int, optional): Nombre de lignes à lire
+
+    Returns:
+        pd.DataFrame: DataFrame avec les colonnes '_id' et 'log1p_recommends'
+    """
+    if num_lines:
+        df = pd.read_csv(filepath, nrows=num_lines)
+    else:
+        df = pd.read_csv(filepath)
+
+    # Renommer les colonnes pour être cohérent
+    df = df.rename(columns={'id': '_id', 'log_recommends': 'log1p_recommends'})
+
+    return df
