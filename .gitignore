@@ -27,3 +27,6 @@ mlruns
 
 # Python #
 .python-version
+
+# Windows image file caches
+*.Zone.Identifier
