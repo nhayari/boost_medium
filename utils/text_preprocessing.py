@@ -10,12 +10,15 @@ def strip_html_content(text: str) -> str:
         return ""
     return re.sub(r"<.*?>", " ", text)
 
+
 # --------- Nettoyage basique ---------
 def remove_non_ascii(text: str) -> str:
     return re.sub(r"[^\x00-\x7F]+", " ", text) if isinstance(text, str) else ""
 
+
 def to_lowercase(text: str) -> str:
     return text.lower() if isinstance(text, str) else ""
+
 
 def remove_numbers(text: str) -> str:
     return re.sub(r"\d+", "", text) if isinstance(text, str) else ""
@@ -26,6 +29,7 @@ def remove_punctuation(text: str) -> str:
 def remove_extra_whitespace(text: str) -> str:
     return re.sub(r"\s+", " ", text).strip() if isinstance(text, str) else ""
 
+
 # --------- Stopwords (sklearn) ---------
 def remove_stopwords(text: str, language: str = "english") -> str:
     if not isinstance(text, str):
@@ -33,6 +37,7 @@ def remove_stopwords(text: str, language: str = "english") -> str:
     tokens = text.split()
     stop_words = ENGLISH_STOP_WORDS if language == "english" else set()
     return " ".join([word for word in tokens if word.lower() not in stop_words])
+
 
 # --------- Tokenization simple ---------
 def tokenize_text(text: str) -> List[str]:
@@ -63,7 +68,7 @@ def advanced_text_clean(text: str, remove_html: bool = True, remove_stop: bool =
     if remove_html:
         text = strip_html_content(text)
     text = basic_text_clean(text)
-    text = remove_non_ascii(text)
+    # text = remove_non_ascii(text)
     if remove_stop:
         text = remove_stopwords(text, language)
     if stem:
