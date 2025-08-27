@@ -47,6 +47,8 @@ def load_json_from_files(X_filepath, y_filepath, num_lines: int | None = None) -
     return df_final
 
 
+
+
 def load_csv(filepath, num_lines: int | None = None) -> pd.DataFrame:
     """
     Lit le fichier CSV et crée un DataFrame.
@@ -67,6 +69,8 @@ def load_csv(filepath, num_lines: int | None = None) -> pd.DataFrame:
     df = df.rename(columns={'id': '_id', 'log_recommends': 'log1p_recommends'})
 
     return df
+
+
 
 def convert_dict_columns(df: pd.DataFrame, drop_cols: bool = True) -> pd.DataFrame:
     """
