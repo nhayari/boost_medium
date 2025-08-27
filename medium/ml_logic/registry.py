@@ -1,7 +1,7 @@
 # import glob
 # import os
-# import time
-# import pickle
+import time
+import pickle
 
 # from colorama import Fore, Style
 from tensorflow import keras
@@ -19,6 +19,20 @@ def save_results(params: dict, metrics: dict) -> None:
     - (unit 03 only) if MODEL_TARGET='mlflow', also persist them on MLflow
     """
     print("🎬 save_results starting ................\n")
+    timestamp = time.strftime("%Y%m%d-%H%M%S")
+
+    # Save params locally
+    if params is not None:
+        params_path = os.path.join(LOCAL_REGISTRY_PATH, "params", timestamp + ".pickle")
+        with open(params_path, "wb") as file:
+            pickle.dump(params, file)
+
+    # Save metrics locally
+    if metrics is not None:
+        metrics_path = os.path.join(LOCAL_REGISTRY_PATH, "metrics", timestamp + ".pickle")
+        with open(metrics_path, "wb") as file:
+            pickle.dump(metrics, file)
+
     print(" 💤 TO DO   !!!!!!!!!!!!!! \n")
     print("🏁 save_results() done \n")
 
