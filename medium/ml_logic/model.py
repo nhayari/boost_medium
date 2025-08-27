@@ -1,6 +1,6 @@
 import numpy as np
 import time
-from keras import Model
+
 # from typing import Tuple
 # from tensorflow import keras
 # from keras import Sequential, layers, regularizers, optimizers
@@ -21,7 +21,7 @@ def initialize_model(input_shape: tuple):
     return model
 
 
-def compile_model(model: Model, learning_rate=0.0005) -> Model:
+def compile_model(model, learning_rate=0.0005):
     """
     Compile if necessary
     """
@@ -33,20 +33,20 @@ def compile_model(model: Model, learning_rate=0.0005) -> Model:
     print("✅ Model compiled")
     return model
 
-def train_model(model: Model, X=None, y=None):
+def train_model(model, X=None, y=None):
     """
     Fit the model and return  model or tuple (fitted_model, history)
     """
     print("🎬 train_model starting ................\n")
     print(" 💤 TO DO   !!!!!!!!!!!!!! \n")
     metrics = None
-    model.fit(X, y)
+    history = model.fit(X, y)
     print("🏁 train_model() done \n")
 
-    return model
+    return model, history
 
 
-def evaluate_model (model: Model, X=None, y=None):
+def evaluate_model (model, X=None, y=None):
     """
     Evaluate trained model performance on the dataset
     """

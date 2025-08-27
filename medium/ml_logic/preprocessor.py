@@ -9,19 +9,22 @@ from nltk.stem import WordNetLemmatizer
 
 
 
-def preprocess_features(X: pd.DataFrame) -> np.ndarray:
+def preprocess_features(data: pd.DataFrame) -> np.ndarray:
     print("🎬 preprocess_features starting ................\n")
     # Instantiating the TfidfVectorizer
     tf_idf_vectorizer = TfidfVectorizer(min_df=0.2)
 
-    X['text_lemmatized'] = X['content'].apply(tokenize_and_lemmatize)
+    data['text_lemmatized'] = data['content'].apply(tokenize_and_lemmatize)
 
     # Training it on the texts
-    X_processed = pd.DataFrame(tf_idf_vectorizer.fit_transform(X['text_lemmatized']).toarray(),
+    X_processed = pd.DataFrame(tf_idf_vectorizer.fit_transform(data['text_lemmatized']).toarray(),
                     columns = tf_idf_vectorizer.get_feature_names_out())
+
+    # Concat 
+    df_processed = pd.concat([X_processed, data['log1p_recommends']], axis=1)
     print("🏁 preprocess_features() done \n")
 
-    return X_processed
+    return df_processed
 
 
 def tokenize_and_lemmatize(text):

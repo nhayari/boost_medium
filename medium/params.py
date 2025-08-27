@@ -2,6 +2,7 @@ import os
 import numpy as np
 
 ##################  VARIABLES  ##################
+DATA_SIZE = os.environ.get("DATA_SIZE")
 DATA_TRAIN = os.environ.get("DATA_TRAIN")
 DATA_TEST = os.environ.get("DATA_TEST")
 DATA_LOG_RECOMMEND = os.environ.get("DATA_LOG_RECOMMEND")
