@@ -1,5 +1,3 @@
-setuptools
-wheel
 pytest
 pylint
 ipdb
