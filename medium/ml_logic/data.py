@@ -27,9 +27,8 @@ def load_json_from_files(X_filepath, y_filepath, num_lines: int | None = None) -
             for obj in reader:
                 records.append(obj)
                 line_count += 1
-
                 # Arrêter si on a atteint le nombre de lignes demandé
-                if num_lines is not None and line_count >= num_lines:
+                if num_lines is not None and line_count >= int(num_lines):
                     break
     except Exception as generalError:
         print(f"Error reading file {X_filepath}: {generalError}")

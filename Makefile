@@ -67,11 +67,11 @@ train:
 	python -c 'from medium.interface.main import train; train()'
 	@echo "✅ End train !"
 
-# pred:
+pred:
 	@echo "🔄 start pred ..."
 	@echo "To Do 🆘"
-# 	python -c 'from medium.interface.main import pred; pred()'
-	@echo "✅ End train !"
+	python -c 'from medium.interface.main import pred; pred()'
+	@echo "✅ End pred !"
 
 evaluate:
 	python -c 'from medium.interface.main import evaluate; evaluate()'

@@ -8,6 +8,7 @@ matplotlib
 seaborn
 scikit-learn
 jsonlines
+nltk
 
 # API
 fastapi==0.108.0
