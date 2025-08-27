@@ -6,37 +6,38 @@ import pandas as pd
 # from dateutil.parser import parse
 
 from medium.params import *
-from medium.ml_logic.data import clean_data
+from medium.ml_logic.data import clean_data, load_json_from_files
 from medium.ml_logic.registry import load_model, save_model, save_results
 from medium.ml_logic.registry import mlflow_run, mlflow_transition_model
 
 from medium.ml_logic.model import initialize_model, compile_model, train_model, evaluate_model
 from medium.ml_logic.preprocessor import preprocess_features
 
-def preprocess() -> None:
+def preprocess(save: bool) -> None:
     """
     - Charge les données brutes depuis les fichiers JSON et CSV
     - Nettoie et préprocesse les données
     - Stocke les données traitées
     """
     print("🎬 main preprocess starting ................\n")
-    print(" 💤 TO DO   !!!!!!!!!!!!!! \n")
 
     # Charger les données JSON
-
-    # Charger les targets CSV
+    data = load_json_from_files(X_filepath=DATA_TRAIN, y_filepath=DATA_LOG_RECOMMEND)
 
     # Nettoyer les données
+    data_cleaned = clean_data(data)
 
     # Prétraiter les features
-    # X_processed = ???
+    X_processed = preprocess_features(data_cleaned)
 
     # Sauvegarder les données traitées localement si necessaire
+
     print("🏁 main preprocess done \n")
-    # print("✅ preprocess() done \n")
+
+    return X_processed
 
 
-# @mlflow_run
+
 def train(
         #test_size: float = 0.2,
         #batch_size=32,
