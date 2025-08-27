@@ -9,7 +9,7 @@ from medium.params import *
 from medium.ml_logic.data import clean_data, load_json_from_files
 from medium.ml_logic.registry import load_model, save_model, save_results
 
-from medium.ml_logic.model import initialize_model, compile_model, train_model, evaluate_model
+from medium.ml_logic.model import initialize_model, compile_model, train_model, evaluate_model, implemented_model
 from medium.ml_logic.preprocessor import preprocess_features
 
 def preprocess() -> None:
@@ -66,15 +66,15 @@ def train(
 
     if model is None:
         # Initialiser le modèle
-        model = initialize_model(input_shape=(X_train.shape[1],))
+        model = initialize_model(model = 'LinearRegression', input_shape=(X_train.shape[1],))
 
-    model, history = train_model(model=model, X=X_train, y=y_train)
+    model = train_model(model=model, X=X_train, y=y_train)
 
-    val_metric = np.min(history.history['val_mae'])
+    val_metric = evaluate_model(model=model, X=X_val, y=y_val)
 
     params = {
         "split_ratio": split_ratio,
-        "metric": 'mae'
+        "metric": implemented_model[model.__class__.__name__]['metrics']
     }
 
     # Save results

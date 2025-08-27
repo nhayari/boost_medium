@@ -21,13 +21,13 @@ def save_results(params: dict, metrics: dict) -> bool:
 
         # Save params locally
         if params is not None:
-            params_path = os.path.join(LOCAL_REGISTRY_PATH, "params", timestamp + ".pickle")
+            params_path = os.path.join(LOCAL_REGISTRY_PATH, "params", f"{MODEL_TYPE}_{DATA_SIZE}_{timestamp}.pickle")
             with open(params_path, "wb") as file:
                 pickle.dump(params, file)
 
         # Save metrics locally
         if metrics is not None:
-            metrics_path = os.path.join(LOCAL_REGISTRY_PATH, "metrics", timestamp + ".pickle")
+            metrics_path = os.path.join(LOCAL_REGISTRY_PATH, "metrics", f"{MODEL_TYPE}_{DATA_SIZE}_{timestamp}.pickle")
             with open(metrics_path, "wb") as file:
                 pickle.dump(metrics, file)
 
@@ -48,7 +48,7 @@ def save_model(model) -> bool:
     try:
         print("🎬 save_model starting ................\n")
         timestamp = time.strftime("%Y%m%d-%H%M%S")
-        model_path = os.path.join(LOCAL_REGISTRY_PATH, "models", f"{timestamp}.pickle")
+        model_path = os.path.join(LOCAL_REGISTRY_PATH, "models", f"{MODEL_TYPE}_{DATA_SIZE}_{timestamp}.pickle")
         with open(model_path, "wb") as file:
             pickle.dump(model, file)
         print("🏁 save_model() done \n")
@@ -70,7 +70,7 @@ def load_model(stage="Production"):
 
         # Get the latest model version name by the timestamp on disk
         local_model_directory = os.path.join(LOCAL_REGISTRY_PATH, "models")
-        local_model_paths = glob.glob(f"{local_model_directory}/*")
+        local_model_paths = glob.glob(f"{local_model_directory}/{MODEL_TYPE}_{DATA_SIZE}_*.pickle")
 
         if not local_model_paths:
             return None
