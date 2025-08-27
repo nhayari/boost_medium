@@ -8,7 +8,6 @@ import pandas as pd
 from medium.params import *
 from medium.ml_logic.data import clean_data, load_json_from_files
 from medium.ml_logic.registry import load_model, save_model, save_results
-from medium.ml_logic.registry import mlflow_run, mlflow_transition_model
 
 from medium.ml_logic.model import initialize_model, compile_model, train_model, evaluate_model
 from medium.ml_logic.preprocessor import preprocess_features
@@ -36,8 +35,6 @@ def preprocess(save: bool) -> None:
 
     return X_processed
 
-
-
 def train(
         #test_size: float = 0.2,
         #batch_size=32,
@@ -51,7 +48,7 @@ def train(
     Return val_mae as a float
     """
     print("🎬 main train starting ................\n")
-    print(" 💤 TO DO   !!!!!!!!!!be careful about @mlflow_run!!! \n")
+    print(" 💤 TO DO   !!!!!!!!!!!!! \n")
     val_metric = 0.0
 
     # Charger les données préprocessées (despuis le csv si sauvegardé
@@ -71,14 +68,12 @@ def train(
     # Save model
     #save_model(model=model)
 
-    #if MODEL_TARGET == 'mlflow':
-    #   mlflow_transition_model(current_stage="None", new_stage="Staging")
+
 
     print("🏁 main train() done \n")
     return val_metric
 
 
-# @mlflow_run
 def evaluate(stage: str = "Production") -> float:
     """
     Évalue la performance du modèle sur l'ensemble de validation
@@ -88,7 +83,7 @@ def evaluate(stage: str = "Production") -> float:
 
     metric =0.0
 
-    print(" 💤 TO DO   !!!!!!!!!!!!!! be careful about @mlflow_run   \n")
+    print(" 💤 TO DO   !!!!!!!!!!!!!!  \n")
 
 
     print("🏁 main evaluate() done \n")
