@@ -20,8 +20,10 @@ requirments:
 
 reinstall_package:
 	@echo "🔄 Réinstallation du package..."
-	@pip uninstall -y medium || :
-	@pip install -e .
+# 	@pip uninstall -y medium || :
+# 	@pip install -e .
+# delete deprecated warning setup
+	@pip install --config-settings editable_mode=compat -e .
 	@echo "✅ Package réinstallé!"
 
 clean:
@@ -39,7 +41,8 @@ clean:
 
 test:
 	@echo "🔄 Start test ..."
-	@echo "To Do 🆘"
+# 	@echo "To Do 🆘"
+	@pytest -v
 	@echo "✅ End!"
 
 lint:
