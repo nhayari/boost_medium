@@ -1,7 +1,5 @@
 raw_data/
 .env
-.env.yaml
-.envrc
 
 # OS generated files #
 ######################
@@ -27,7 +25,3 @@ mlruns
 *.vscode
 
 # Python #
-.python-version
-
-# Windows image file caches
-*.Zone.Identifier
