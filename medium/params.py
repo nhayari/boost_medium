@@ -3,9 +3,11 @@ import numpy as np
 
 ##################  VARIABLES  ##################
 DATA_SIZE = int(os.environ.get("DATA_SIZE"))
+DATA_TEST_SIZE = int(os.environ.get("DATA_TEST_SIZE"))
 DATA_TRAIN = os.environ.get("DATA_TRAIN")
 DATA_TEST = os.environ.get("DATA_TEST")
 DATA_LOG_RECOMMEND = os.environ.get("DATA_LOG_RECOMMEND")
+DATA_TEST_LOG_RECOMMEND = os.environ.get("DATA_TEST_LOG_RECOMMEND")
 MODEL_TARGET = os.environ.get("MODEL_TARGET")
 MODEL_TYPE = os.environ.get("MODEL_TYPE")
 

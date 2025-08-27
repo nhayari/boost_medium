@@ -17,14 +17,15 @@ def preprocess_features(data: pd.DataFrame) -> np.ndarray:
     data['text_lemmatized'] = data['content'].apply(tokenize_and_lemmatize)
 
     # Training it on the texts
-    X_processed = pd.DataFrame(tf_idf_vectorizer.fit_transform(data['text_lemmatized']).toarray(),
+    X_processed = tf_idf_vectorizer.fit_transform(data['text_lemmatized'])
+    X_processed = pd.DataFrame(X_processed.toarray(),
                     columns = tf_idf_vectorizer.get_feature_names_out())
 
-    # Concat 
+    # Concat
     df_processed = pd.concat([X_processed, data['log1p_recommends']], axis=1)
     print("🏁 preprocess_features() done \n")
 
-    return df_processed
+    return df_processed, tf_idf_vectorizer
 
 
 def tokenize_and_lemmatize(text):
