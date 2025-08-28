@@ -3,6 +3,7 @@ import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from nltk import word_tokenize
 from nltk.stem import WordNetLemmatizer
+from medium.ml_logic.data import clean_data
 # from sklearn.pipeline import make_pipeline
 # from sklearn.compose import ColumnTransformer, make_column_transformer
 # from sklearn.preprocessing import OneHotEncoder, FunctionTransformer
@@ -23,9 +24,24 @@ def preprocess_features(data: pd.DataFrame) -> np.ndarray:
 
     # Concat
     df_processed = pd.concat([X_processed, data['log1p_recommends']], axis=1)
-    print("🏁 preprocess_features() done \n")
+    print("✅ preprocess_features() done \n")
 
     return df_processed, tf_idf_vectorizer
+
+def preprocess_pred(data: pd.DataFrame,preprocessor:any ) -> np.ndarray:
+    print("🎬 preprocess_pred starting ................\n")
+
+    data['text_lemmatized'] = data['content'].apply(tokenize_and_lemmatize)
+    X_processed = preprocessor.transform(data['text_lemmatized'])
+    X_processed = pd.DataFrame(X_processed.toarray(),
+                    columns = preprocessor.get_feature_names_out())
+
+    # # Concat
+    # df_processed = pd.concat([X_processed, data['log1p_recommends']], axis=1)
+    print("✅ preprocess_pred() done \n")
+
+    return X_processed
+
 
 
 def tokenize_and_lemmatize(text):
