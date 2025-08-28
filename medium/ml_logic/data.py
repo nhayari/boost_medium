@@ -39,6 +39,7 @@ def load_json_from_files(X_filepath, y_filepath, num_lines: int | None = None) -
     df = pd.DataFrame(records)
     df_y = load_csv(y_filepath, num_lines=num_lines)
 
+
     df_final = pd.concat([df, df_y['log1p_recommends']], axis=1)
 
     print(f"Final DataFrame shape after concatenation: {df_final.shape}")
@@ -268,4 +269,14 @@ def clean_data(df: pd.DataFrame, chunk_size: int = 1000) -> pd.DataFrame:
             print(" - 'content' column not found; skipping HTML tag stripping")
 
     print("✅ Data cleaned")
+    return df
+
+
+def create_dataframe_to_predict(text:str="", title:str=""):
+    df = pd.DataFrame({
+            'content': [text],
+            'title': [title],
+            'tags':[""]
+    }
+    )
     return df

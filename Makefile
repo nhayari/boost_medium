@@ -1,33 +1,36 @@
 help:
-	@echo "👌 Commandes disponibles...........:"
-	@echo "  make help        - Afficher cette aide"
-	@echo "  make requirments - Installer les dépendances"
-	@echo "  make clean       - Nettoyer les fichiers temporaires"
-	@echo "  make reinstall_package  - Réinstaller package"
-# 	@echo "  make test        - Exécuter les tests"
-# 	@echo "  make lint        - Vérifier la qualité du code"
-# 	@echo "  make data        - Télécharger les données"
-	@echo "  make process     - Traiter les données"
-	@echo "  make train       - Entraîner le modèle"
-	@echo "  make evaluate    - Evaluer le modèle"
-	@echo "  make run_all     - run in the order : preprocess -> train -> pred -> evaluate"
-	@echo "✅ Fin des Commandes !"
+	@echo "------ 👌Commandes disponibles :"
+	@echo "> make help        - Afficher cette aide"
+	@echo "> make requirments - Installer les dépendances"
+	@echo "> make clean       - Nettoyer les fichiers temporaires"
+	@echo "> make reinstall_package  - Réinstaller package"
+# 	@echo "> make test        - Exécuter les tests"
+# 	@echo "> make lint        - Vérifier la qualité du code"
+# 	@echo "> make data        - Télécharger les données"
+	@echo "> make preprocess       - Traiter les données"
+	@echo "> make train model_name=        - Entraîner le modèle"
+	@echo "> make evaluate  model_name=    - Evaluer le modèle"
+	@echo "> make run_all model_name=      - run in the order : preprocess -> train -> evaluate"
+	@echo "> make pred text=               - text must be in '  '"
+	@echo " ! actually model_name : ExtraTreesRegressor or RandomForestRegressor or LinearRegression."
+	@echo "------ ✅ Fin des Commandes."
+
 
 requirments:
-	@echo "🔄 Réinstallation du package..."
+	@echo "------ 🔄 Réinstallation du package..."
 	pip install -r requirements.txt
-	@echo "✅ Package réinstallé!"
+	@echo "------ ✅ Package réinstallé."
 
 reinstall_package:
-	@echo "🔄 Réinstallation du package..."
+	@echo "------ 🔄 Réinstallation du package..."
 # 	@pip uninstall -y medium || :
 # 	@pip install -e .
 # delete deprecated warning setup
 	@pip install --config-settings editable_mode=compat -e .
-	@echo "✅ Package réinstallé!"
+	@echo "------ ✅ Package réinstallé."
 
 clean:
-	@echo "🧹 Nettoyage..."
+	@echo "------ 🧹 Nettoyage..."
 # 	@rm -f */version.txt
 # 	@rm -f .coverage
 	@rm -fr **/__pycache__ **/*.pyc
@@ -35,49 +38,51 @@ clean:
 	@rm -fr medium.egg-info
 # 	@rm -f **/.DS_Store
 	@rm -f **/*Zone.Identifier
-	@echo "✅ Nettoyage terminé!"
+	@echo "------ ✅ Nettoyage terminé."
 
 
 
 test:
-	@echo "🔄 Start test ..."
+	@echo "------ 🔄 Start test ..."
 # 	@echo "To Do 🆘"
 	@pytest -v
-	@echo "✅ End!"
+	@echo "------ ✅ End!"
 
 lint:
-	@echo "🔄 Start lint..."
+	@echo "------ 🔄 Start lint..."
 	@echo "To Do 🆘"
-	@echo "✅ End lint!"
+	@echo "------ ✅ End lint.!"
 
 data:
-	@echo "🔄 Start data load..."
+	@echo "------ 🔄 Start data load..."
 	@echo "To Do 🆘 if necessary"
-	@echo "✅ End data load!"
+	@echo "------ ✅ End data load."
 
-process:
-	@echo "🔄 Start process ..."
-	@echo "To Do 🆘"
-	python -c 'from medium.interface.main import preprocess; preprocess()'
-	@echo "✅ End preocess!"
+preprocess:
+	@echo "------ 🔄 Start preprocess ..."
+	python -c "from medium.interface.main import preprocess; preprocess()"
+	@echo "------ ✅ End preprocess."
 
 train:
-	@echo "🔄 Start train ..."
-	@echo "To Do 🆘"
-	python -c 'from medium.interface.main import train; train()'
-	@echo "✅ End train !"
+	@echo "------ 🔄 Start train ..."
+# 	python -c 'from medium.interface.main import train; train()'
+	python -c "from medium.interface.main import train; train(model_name='$(model_name)')"
+	@echo "------ ✅ End train."
 
 pred:
-	@echo "🔄 start pred ..."
+	@echo "------ 🔄 start pred ..."
 	@echo "To Do 🆘"
-	python -c 'from medium.interface.main import pred; pred()'
-	@echo "✅ End pred !"
+	python -c "from medium.interface.main import pred; pred(model_name='$(model_name)', text='$(text)')"
+	@echo "------ ✅ End pred."
 
 evaluate:
-	python -c 'from medium.interface.main import evaluate; evaluate()'
+	python -c "from medium.interface.main import evaluate; evaluate(model_name='$(model_name)')"
 
 run_all:
-	python -c 'from medium.interface.main import run_all; run_all()'
+	@echo "------ 🔄 run all ..."
+# 	python -c 'from medium.interface.main import run_all; run_all()'
+		python -c "from medium.interface.main import run_all; run_all(model_name='$(model_name)')"
+	@echo "------ ✅ End run all."
 
 # workflow:
 # 	PREFECT__LOGGING__LEVEL=${PREFECT_LOG_LEVEL} python -m medium.interface.workflow

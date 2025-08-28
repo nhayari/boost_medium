@@ -9,7 +9,7 @@ seaborn
 scikit-learn
 jsonlines
 nltk
-
+tensorflow
 # API
 fastapi==0.108.0
 
