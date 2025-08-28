@@ -45,9 +45,6 @@ def load_json_from_files(X_filepath, y_filepath, num_lines: int | None = None) -
 
     return df_final
 
-
-
-
 def load_csv(filepath, num_lines: int | None = None) -> pd.DataFrame:
     """
     Lit le fichier CSV et crée un DataFrame.
@@ -124,55 +121,29 @@ def convert_dict_columns(df: pd.DataFrame, drop_cols: bool = True) -> pd.DataFra
 
     return df_result
 
-def strip_html_tags(series: pd.Series, chunk_size: int, show_progress: bool = True) -> pd.Series:
+def title_contains_high_non_ascii_ratio(title: str, threshold: float = 0.2) -> bool:
     """
-    Memory-efficient processing with optional progress tracking.
-    Processes data in-place to minimize memory usage.
+    Check if the title contains a high ratio of non-ASCII characters.
+
+    Parameters:
+    -----------
+    title : str
+        The title string to check.
+    threshold : float
+        The ratio threshold above which the title is considered to have high non-ASCII content.
+
+    Returns:
+    --------
+    bool
+        True if the ratio of non-ASCII characters exceeds the threshold, False otherwise.
     """
+    if not isinstance(title, str) or len(title) == 0:
+        return False
 
-    def strip_tags_regex_compiled(html):
-        """
-        Use pre-compiled regex patterns for maximum speed.
-        """
-        if pd.isna(html):
-            return html
+    non_ascii_count = sum(1 for char in title if ord(char) > 127)
+    ratio = non_ascii_count / len(title)
 
-        # Remove HTML tags with compiled regex
-        clean = HTML_TAG_PATTERN.sub('', html)
-        # Decode HTML entities
-        clean = unescape(clean)
-        # Clean up whitespace with compiled regex
-        clean = WHITESPACE_PATTERN.sub(' ', clean).strip()
-
-        return clean
-
-    if show_progress:
-        try:
-            from tqdm import tqdm
-            progress_bar = tqdm(total=len(series), desc="Stripping HTML tags")
-        except ImportError:
-            print("Install tqdm for progress tracking: pip install tqdm")
-            show_progress = False
-
-    # Process in chunks to manage memory
-    for i in range(0, len(series), chunk_size):
-        end_idx = min(i + chunk_size, len(series))
-
-        # Get chunk
-        chunk_mask = series.iloc[i:end_idx].notna()
-        if chunk_mask.any():
-            # Apply cleaning only to non-null values in chunk
-            chunk_indices = series.iloc[i:end_idx][chunk_mask].index
-            for idx in chunk_indices:
-                series.iloc[idx] = strip_tags_regex_compiled(series.iloc[idx])
-
-        if show_progress:
-            progress_bar.update(end_idx - i)
-
-    if show_progress:
-        progress_bar.close()
-
-    return series
+    return ratio > threshold
 
 def remove_constant_columns(df: pd.DataFrame, exclude_cols: list | str | None = None) -> pd.DataFrame:
     """
@@ -226,7 +197,7 @@ def remove_constant_columns(df: pd.DataFrame, exclude_cols: list | str | None = 
 
     return df[cols_to_keep]
 
-def clean_data(df: pd.DataFrame, chunk_size: int = 1000) -> pd.DataFrame:
+def clean_data(df: pd.DataFrame) -> pd.DataFrame:
     """
     Clean raw data by flattening dict columns, removing constant columns,
     and stripping HTML tags from 'content' column.
@@ -260,12 +231,14 @@ def clean_data(df: pd.DataFrame, chunk_size: int = 1000) -> pd.DataFrame:
         df = remove_constant_columns(df, exclude_cols=['content', 'tags'])
         print(f" - Removed constant columns, remaining columns: {df.shape[1]}")
 
-        # 3. Strip HTML tags from 'content' column if it exists
-        if 'content' in df.columns:
-            df['content'] = strip_html_tags(df['content'], chunk_size=chunk_size, show_progress=True)
-            print(" - Stripped HTML tags from 'content' column")
+        # 3. Remove articles where their title contains 20% of non-ASCII characters
+        if 'title' in df.columns:
+            initial_count = len(df)
+            df = df[~df['title'].apply(title_contains_high_non_ascii_ratio)]
+            removed_count = initial_count - len(df)
+            print(f" - Removed {removed_count} articles with high non-ASCII ratio in title")
         else:
-            print(" - 'content' column not found; skipping HTML tag stripping")
+            print(" - 'title' column not found; skipping non-ASCII title filtering")
 
     print("✅ Data cleaned")
     return df

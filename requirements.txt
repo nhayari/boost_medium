@@ -9,6 +9,8 @@ seaborn
 scikit-learn
 jsonlines
 nltk
+textblob
+textstat
 
 # API
 fastapi==0.108.0
