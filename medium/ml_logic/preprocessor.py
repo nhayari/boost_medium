@@ -230,7 +230,7 @@ def tokenize_and_lemmatize(text):
     return (' '.join(tokens_lemmatized)).strip()
 
 def preprocess_features(df: pd.DataFrame, chunksize: int, remove_punct: bool,
-                        remove_stopwords: bool, tf_idf_min_ratio: float = 0.02):
+                        remove_stopwords: bool, tf_idf_min_ratio: float = 0.02, tfidf_vectorizer: TfidfVectorizer = None, std_scaler: StandardScaler = None):
     print("🎬 Preprocessing start... \n")
     df_processing = df.copy()
     df_processing = clean_data(df_processing)
@@ -275,7 +275,10 @@ def preprocess_features(df: pd.DataFrame, chunksize: int, remove_punct: bool,
 
     # Instantiating the TfidfVectorizer
     print(" - Vectorizing text data with TF-IDF...")
-    tf_idf_vectorizer = TfidfVectorizer(min_df=tf_idf_min_ratio)
+    if tfidf_vectorizer is not None:
+        local_tfidf_vectorizer = tfidf_vectorizer
+    else:
+        local_tfidf_vectorizer = TfidfVectorizer(min_df=tf_idf_min_ratio)
     df_content = df_final[['content']]
     df_final = df_final.drop(columns=['content', 'title'])
 
@@ -286,10 +289,14 @@ def preprocess_features(df: pd.DataFrame, chunksize: int, remove_punct: bool,
     df_final['text_lemmatized'] = df_content['content'].apply(tokenize_and_lemmatize)
 
     # Training it on the texts
-    X_processed = tf_idf_vectorizer.fit_transform(df_final['text_lemmatized'])
+    if tfidf_vectorizer is not None:
+        X_processed = local_tfidf_vectorizer.transform(df_final['text_lemmatized'])
+    else:
+        X_processed = local_tfidf_vectorizer.fit_transform(df_final['text_lemmatized'])
+
     df_final = df_final.drop(columns=['text_lemmatized'])
     X_processed = pd.DataFrame(X_processed.toarray(),
-                    columns = tf_idf_vectorizer.get_feature_names_out(),
+                    columns = local_tfidf_vectorizer.get_feature_names_out(),
                     index=df_final.index)
 
     # Encode columns
@@ -302,7 +309,10 @@ def preprocess_features(df: pd.DataFrame, chunksize: int, remove_punct: bool,
 
     # Scale metadata columns
     print("Scaling the numerical columns...")
-    scaler = StandardScaler()
+    if std_scaler is not None:
+        local_std_scaler = std_scaler
+    else:
+        local_std_scaler = StandardScaler()
 
     cols_to_scale = ['publication_year', 'publication_month',
        'publication_day', 'publication_dayofweek', 'publication_hour',
@@ -314,14 +324,18 @@ def preprocess_features(df: pd.DataFrame, chunksize: int, remove_punct: bool,
        'content_num_h1', 'content_num_h2', 'content_num_h3',
        'readability_score', 'grade_level']
 
-    df_final[cols_to_scale] = scaler.fit_transform(df_final[cols_to_scale])
+    if std_scaler is not None:
+        df_final[cols_to_scale] = local_std_scaler.transform(df_final[cols_to_scale])
+    else:
+        df_final[cols_to_scale] = local_std_scaler.fit_transform(df_final[cols_to_scale])
 
     # Concat
     df_processed_final = pd.concat([df_final, X_processed, y], axis=1)
     print(df_processed_final.shape)
     print("🏁 preprocess_features() done \n")
 
-    return df_processed_final, tf_idf_vectorizer
+    return df_processed_final, local_tfidf_vectorizer, local_std_scaler
+
 
 def preprocess_pred(data: pd.DataFrame,preprocessor:any ):
     print("🎬 preprocess_pred starting ................\n")

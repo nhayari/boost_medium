@@ -26,16 +26,15 @@ def preprocess() -> None:
     data = load_json_from_files(X_filepath=DATA_TRAIN, y_filepath=DATA_LOG_RECOMMEND, num_lines=DATA_SIZE)
 
     # Nettoyer les données
-    data_cleaned = clean_data(data)
-
     # Prétraiter les features
-    df_processed, preprocessor = preprocess_features(data_cleaned)
+    df_processed, tfidf_preprocessor, std_scaler = preprocess_features(data, chunksize=200, remove_punct=True, remove_stopwords=True)
 
     # Sauvegarder les données traitées localement si necessaire
     df_processed.to_csv(os.path.join(PATH_DATA, f"df_processed_{DATA_SIZE}.csv"), index=False)
 
     # Sauvegarder le préprocesseur
-    save_preprocessor(preprocessor)
+    save_preprocessor(tfidf_preprocessor, "tfidf_vectorizer")
+    save_preprocessor(std_scaler, "standard_scaler")
 
     print("✅main preprocess done \n")
 
@@ -89,30 +88,31 @@ def train(model_name:str, split_ratio: float = 0.2 ):
     return val_metric
 
 
-def evaluate(model_name:str, X_pred: pd.DataFrame = None, ):
+def evaluate(model_name:str, df_test: pd.DataFrame = None, ):
     """
     Évalue la performance du modèle sur l'ensemble de validation
     Return metric as a float
     """
     print("🎬 main evaluate starting ................\n")
 
-    if X_pred is None:
+    if df_test is None:
         # chqarger les test pour évaluer
-        X_pred = load_json_from_files(X_filepath=DATA_TEST, y_filepath=DATA_TEST_LOG_RECOMMEND, num_lines=DATA_TEST_SIZE)
-        old_pred = X_pred['log1p_recommends'].copy()
-        X_pred.drop(columns=['log1p_recommends'])
+        df_test = load_json_from_files(X_filepath=DATA_TEST, y_filepath=DATA_TEST_LOG_RECOMMEND, num_lines=DATA_TEST_SIZE)
+        old_pred = df_test['log1p_recommends'].copy()
+        #df_test.drop(columns=['log1p_recommends'])
 
-    data_cleaned = clean_data(X_pred)
+    #data_cleaned = clean_data(df_test)
 
     model = load_model(model_name)
-    preprocessor = load_preprocessor()
+    tfidf_preprocessor = load_preprocessor('tfidf_vectorizer')
+    std_preprocessor = load_preprocessor('standard_scaler')
 
     print(f" ℹ️ the model type : {model.__class__.__name__} ... ")
 
-    X_processed = preprocess_pred(data_cleaned,preprocessor)
+    X_processed, __tfidf, __scaler = preprocess_features(df_test, chunksize=200, remove_punct=True, remove_stopwords=True, tfidf_vectorizer=tfidf_preprocessor, std_scaler=std_preprocessor)
     print(f" ℹ️ X_processed shape :  { X_processed.shape}")
 
-    y_pred = model.predict(X_processed)
+    y_pred = model.predict(X_processed.drop(columns=['log1p_recommends']))
 
     # Transformation inverse si nécessaire
     y_pred_original = np.expm1(y_pred)

@@ -3,7 +3,7 @@ import string
 from typing import List, Optional
 import pandas as pd
 from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
-import inflect
+#import inflect
 
 # --------- Nettoyage HTML  replacing by space---------
 def strip_html_content(text: str) -> str:
@@ -24,17 +24,18 @@ def to_lowercase(text: str) -> str:
 def remove_numbers(text: str) -> str:
     return re.sub(r"\d+", "", text) if isinstance(text, str) else ""
 
-def replace_numbers(words):
-    """Replace all interger occurrences in list of tokenized words with textual representation"""
-    p = inflect.engine()
-    new_words = []
-    for word in words:
-        if word.isdigit():
-            new_word = p.number_to_words(word)
-            new_words.append(new_word)
-        else:
-            new_words.append(word)
-    return new_words
+
+# def replace_numbers(words):
+#     """Replace all interger occurrences in list of tokenized words with textual representation"""
+#     p = inflect.engine()
+#     new_words = []
+#     for word in words:
+#         if word.isdigit():
+#             new_word = p.number_to_words(word)
+#             new_words.append(new_word)
+#         else:
+#             new_words.append(word)
+#     return new_words
 
 def remove_punctuation(text: str) -> str:
     return text.translate(str.maketrans("", "", string.punctuation)) if isinstance(text, str) else ""
