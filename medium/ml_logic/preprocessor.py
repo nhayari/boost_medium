@@ -238,13 +238,14 @@ def preprocess_features(df: pd.DataFrame, chunksize: int, remove_punct: bool,
 
     print(" - Removing unnecessary columns...")
     cols_to_remove = [
-        '_id', 'tags', 'link_tags_author', 'link_tags_alternate', 'link_tags_stylesheet',
+        '_id', 'url', 'tags', 'link_tags_author', 'link_tags_alternate', 'link_tags_stylesheet',
         'link_tags_apple-touch-icon', 'meta_tags_twitter:app:url:iphone', 'meta_tags_al:ios:url',
         'meta_tags_al:android:url', 'meta_tags_al:web:url', 'meta_tags_og:title', 'meta_tags_og:description',
         'meta_tags_og:url', 'meta_tags_og:description', 'meta_tags_twitter:description', 'meta_tags_author',
-        'meta_tags_twitter:card', 'meta_tags_article:publisher', 'meta_tags_article:author', 'meta_tags_article:published_time',
-        'meta_tags_twitter:creator', 'meta_tags_twitter:site', 'meta_tags_og:site_name', 'meta_tags_og:image', 'meta_tags_twitter:image:src',
-        'meta_tags_title', 'link_tags_canonical', 'meta_tags_description', 'author_url', 'author_twitter'
+        'meta_tags_twitter:card', 'meta_tags_article:publisher', 'meta_tags_article:author',
+        'meta_tags_article:published_time', 'meta_tags_twitter:creator', 'meta_tags_twitter:site',
+        'meta_tags_og:site_name', 'meta_tags_og:image', 'meta_tags_twitter:image:src', 'meta_tags_title',
+        'link_tags_canonical', 'meta_tags_description', 'author_url', 'author_twitter'
     ]
 
     df_processing = df_processing.drop(columns=[col for col in cols_to_remove if col in df_processing.columns])
@@ -274,10 +275,11 @@ def preprocess_features(df: pd.DataFrame, chunksize: int, remove_punct: bool,
 
     # Instantiating the TfidfVectorizer
     print(" - Vectorizing text data with TF-IDF...")
-    tf_idf_vectorizer = TfidfVectorizer(min_df=0.2)
+    tf_idf_vectorizer = TfidfVectorizer(min_df=0.02)
     df_content = df_final[['content']]
 
     y = df_final['log1p_recommends']
+    df_final = df_final.drop(columns='log1p_recommends')
 
     df_final['text_lemmatized'] = df_content['content'].apply(tokenize_and_lemmatize)
     df_final = df_final.drop(columns=['content', 'title'])
