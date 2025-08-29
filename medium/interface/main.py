@@ -53,6 +53,7 @@ def train(model_name:str, split_ratio: float = 0.2 ):
 
     # Charger les données préprocessées (depuis le csv si sauvegardé)
     df_processed = pd.read_csv(os.path.join(PATH_DATA, f"df_processed_{DATA_SIZE}.csv"))
+    print(os.path.join(PATH_DATA, f"df_processed_{DATA_SIZE}.csv"))
 
     # Créer X et y
     X = df_processed.drop(columns=['log1p_recommends'])
@@ -63,7 +64,7 @@ def train(model_name:str, split_ratio: float = 0.2 ):
     X_train, X_val = X[:train_length], X[train_length:]
     y_train, y_val = y[:train_length], y[train_length:]
 
-    model = load_model(model_name)
+    model = None # load_model(model_name)
 
     if model is None:
         # Initialiser le modèle
@@ -98,7 +99,7 @@ def evaluate(model_name:str, df_test: pd.DataFrame = None, ):
     if df_test is None:
         # chqarger les test pour évaluer
         df_test = load_json_from_files(X_filepath=DATA_TEST, y_filepath=DATA_TEST_LOG_RECOMMEND, num_lines=DATA_TEST_SIZE)
-        old_pred = df_test['log1p_recommends'].copy()
+
         #df_test.drop(columns=['log1p_recommends'])
 
     #data_cleaned = clean_data(df_test)
@@ -111,7 +112,7 @@ def evaluate(model_name:str, df_test: pd.DataFrame = None, ):
 
     X_processed, __tfidf, __scaler = preprocess_features(df_test, chunksize=200, remove_punct=True, remove_stopwords=True, tfidf_vectorizer=tfidf_preprocessor, std_scaler=std_preprocessor)
     print(f" ℹ️ X_processed shape :  { X_processed.shape}")
-
+    old_pred = X_processed['log1p_recommends'].copy()
     y_pred = model.predict(X_processed.drop(columns=['log1p_recommends']))
 
     # Transformation inverse si nécessaire

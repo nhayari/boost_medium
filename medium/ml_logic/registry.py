@@ -128,7 +128,7 @@ def load_preprocessor(name:str='preprocessor'):
         try:
             with open(most_recent_preprocessor_path_on_disk, "rb") as file:
                 preprocessor = pickle.load(file)
-                print(f"✅ load_preprocessor() done \n")
+                print(f"✅ Loaded preprocessor {name}. \n")
                 return preprocessor
         except Exception as e:
             print(f"Error loading preprocessor: {e}")

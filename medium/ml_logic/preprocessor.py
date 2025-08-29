@@ -15,6 +15,8 @@ from medium.ml_logic.encoders import encode_referrer, encode_domain, encode_robo
 # from sklearn.pipeline import make_pipeline
 # from sklearn.compose import ColumnTransformer, make_column_transformer
 from sklearn.preprocessing import StandardScaler
+import warnings
+warnings.filterwarnings('ignore')
 
 HTML_TAG_PATTERN = re.compile(r'<[^>]+>')
 WHITESPACE_PATTERN = re.compile(r'\s+')
@@ -230,8 +232,26 @@ def tokenize_and_lemmatize(text):
     return (' '.join(tokens_lemmatized)).strip()
 
 def preprocess_features(df: pd.DataFrame, chunksize: int, remove_punct: bool,
-                        remove_stopwords: bool, tf_idf_min_ratio: float = 0.02, tfidf_vectorizer: TfidfVectorizer = None, std_scaler: StandardScaler = None):
+                        remove_stopwords: bool, tf_idf_min_ratio: float = 0.02,
+                        tfidf_vectorizer: TfidfVectorizer = None,
+                        std_scaler: StandardScaler = None,
+                        is_training: bool = None):
+    """
+    Preprocess features for both training and evaluation.
+
+    Parameters:
+    -----------
+    is_training : bool, optional
+        If None, inferred from whether tfidf_vectorizer is None
+        If True, fits the transformers
+        If False, only transforms using existing transformers
+    """
     print("🎬 Preprocessing start... \n")
+
+    # Infer if we're training based on whether vectorizer is provided
+    if is_training is None:
+        is_training = (tfidf_vectorizer is None)
+
     df_processing = df.copy()
     df_processing = clean_data(df_processing)
     print(df_processing.shape)
@@ -245,7 +265,8 @@ def preprocess_features(df: pd.DataFrame, chunksize: int, remove_punct: bool,
         'meta_tags_twitter:card', 'meta_tags_article:publisher', 'meta_tags_article:author',
         'meta_tags_article:published_time', 'meta_tags_twitter:creator', 'meta_tags_twitter:site',
         'meta_tags_og:site_name', 'meta_tags_og:image', 'meta_tags_twitter:image:src', 'meta_tags_title',
-        'link_tags_canonical', 'meta_tags_description', 'author_url', 'author_twitter'
+        'link_tags_canonical', 'meta_tags_description', 'author_url', 'author_twitter', 'domain', #'image_url', 'link_tags_amphtml',
+        'meta_tags_robots' #'meta_tags_referrer',
     ]
 
     df_processing = df_processing.drop(columns=[col for col in cols_to_remove if col in df_processing.columns])
@@ -273,47 +294,58 @@ def preprocess_features(df: pd.DataFrame, chunksize: int, remove_punct: bool,
     df_processing_cleaned = clean_text(df_processing_nlp, text_col='content', drop_punctuation=remove_punct, drop_stopwords=remove_stopwords)
     df_final = df_processing_cleaned.copy()
 
-    # Instantiating the TfidfVectorizer
+    # Store target variable if it exists
+    y = None
+    if 'log1p_recommends' in df_final.columns:
+        y = df_final['log1p_recommends']
+        df_final = df_final.drop(columns='log1p_recommends')
+
+    # Vectorizing text data with TF-IDF
     print(" - Vectorizing text data with TF-IDF...")
-    if tfidf_vectorizer is not None:
-        local_tfidf_vectorizer = tfidf_vectorizer
-    else:
-        local_tfidf_vectorizer = TfidfVectorizer(min_df=tf_idf_min_ratio)
     df_content = df_final[['content']]
     df_final = df_final.drop(columns=['content', 'title'])
-
-    y = df_final['log1p_recommends']
-    df_final = df_final.drop(columns='log1p_recommends')
 
     # Tokenize and lemmatize content
     df_final['text_lemmatized'] = df_content['content'].apply(tokenize_and_lemmatize)
 
-    # Training it on the texts
-    if tfidf_vectorizer is not None:
-        X_processed = local_tfidf_vectorizer.transform(df_final['text_lemmatized'])
-    else:
+    # Initialize or use existing TF-IDF vectorizer
+    if is_training:
+        local_tfidf_vectorizer = TfidfVectorizer(min_df=tf_idf_min_ratio)
         X_processed = local_tfidf_vectorizer.fit_transform(df_final['text_lemmatized'])
+        # Store the feature names for later use
+        tfidf_feature_names = local_tfidf_vectorizer.get_feature_names_out()
+    else:
+        if tfidf_vectorizer is None:
+            raise ValueError("tfidf_vectorizer must be provided when is_training=False")
+        local_tfidf_vectorizer = tfidf_vectorizer
+        X_processed = local_tfidf_vectorizer.transform(df_final['text_lemmatized'])
+        # Use the same feature names from training
+        tfidf_feature_names = local_tfidf_vectorizer.get_feature_names_out()
 
     df_final = df_final.drop(columns=['text_lemmatized'])
-    X_processed = pd.DataFrame(X_processed.toarray(),
-                    columns = local_tfidf_vectorizer.get_feature_names_out(),
-                    index=df_final.index)
+
+    # Create TF-IDF DataFrame with consistent columns
+    X_processed_df = pd.DataFrame(
+        X_processed.toarray(),
+        columns=tfidf_feature_names,
+        index=df_final.index
+    )
 
     # Encode columns
-    print("Encoding the columns...")
+    print(" - Encoding the columns...")
     df_final['image_url'] = encode_zero_ones(df_final['image_url'])
     df_final['link_tags_amphtml'] = encode_zero_ones(df_final['link_tags_amphtml'])
-    df_final['domain'] = encode_domain(df_final['domain'])
+    # df_final['domain'] = encode_domain(df_final['domain'])
     df_final['meta_tags_referrer'] = encode_referrer(df_final['meta_tags_referrer'])
-    df_final['meta_tags_robots'] = encode_robots(df_final['meta_tags_robots'])
+    # df_final['meta_tags_robots'] = encode_robots(df_final['meta_tags_robots'])
+    # df_final['image_url'] = 0
+    # df_final['link_tags_amphtml'] = 0
+    # # df_final['domain'] = 0
+    # df_final['meta_tags_referrer'] = 0
+    # df_final['meta_tags_robots'] = 0
 
     # Scale metadata columns
-    print("Scaling the numerical columns...")
-    if std_scaler is not None:
-        local_std_scaler = std_scaler
-    else:
-        local_std_scaler = StandardScaler()
-
+    print(" - Scaling the numerical columns...")
     cols_to_scale = ['publication_year', 'publication_month',
        'publication_day', 'publication_dayofweek', 'publication_hour',
        'days_since_publication', 'title_length', 'title_word_count',
@@ -324,18 +356,29 @@ def preprocess_features(df: pd.DataFrame, chunksize: int, remove_punct: bool,
        'content_num_h1', 'content_num_h2', 'content_num_h3',
        'readability_score', 'grade_level']
 
-    if std_scaler is not None:
-        df_final[cols_to_scale] = local_std_scaler.transform(df_final[cols_to_scale])
-    else:
-        df_final[cols_to_scale] = local_std_scaler.fit_transform(df_final[cols_to_scale])
+    # Handle missing columns in test set
+    cols_to_scale = [col for col in cols_to_scale if col in df_final.columns]
 
-    # Concat
-    df_processed_final = pd.concat([df_final, X_processed, y], axis=1)
-    print(df_processed_final.shape)
+    if is_training:
+        local_std_scaler = StandardScaler()
+        df_final[cols_to_scale] = local_std_scaler.fit_transform(df_final[cols_to_scale])
+    else:
+        if std_scaler is None:
+            raise ValueError("std_scaler must be provided when is_training=False")
+        local_std_scaler = std_scaler
+        df_final[cols_to_scale] = local_std_scaler.transform(df_final[cols_to_scale])
+
+    # Concatenate all features
+    df_processed_final = pd.concat([df_final, X_processed_df], axis=1)
+
+    # Add back the target variable if it exists
+    if y is not None:
+        df_processed_final = pd.concat([df_processed_final, y], axis=1)
+
+    print(f" - Final shape: {df_processed_final.shape}")
     print("🏁 preprocess_features() done \n")
 
     return df_processed_final, local_tfidf_vectorizer, local_std_scaler
-
 
 def preprocess_pred(data: pd.DataFrame,preprocessor:any ):
     print("🎬 preprocess_pred starting ................\n")
