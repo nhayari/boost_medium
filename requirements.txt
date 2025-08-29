@@ -9,6 +9,9 @@ seaborn
 scikit-learn
 jsonlines
 nltk
+textblob
+textstat
+
 tensorflow
 streamlit
 # API
