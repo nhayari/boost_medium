@@ -1,0 +1,14 @@
+version: '3.9'
+services:
+  app:
+    image: europe-west1-docker.pkg.dev/boost-medium/boost-medium-repo/boost-medium-docker:latest
+    build: .
+    ports:
+      - "8000:8000"
+    environment :
+      - PORT=8000
+    volumes:
+      - ./medium:/app/boost_medium
+      - ./requirements.txt:/app/requirements.txt
+    env_file:
+      - .env
