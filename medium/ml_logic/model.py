@@ -1,6 +1,6 @@
 import numpy as np
 import time
-
+from scipy import stats
 from sklearn.metrics import mean_absolute_error
 
 # from typing import Tuple
@@ -8,7 +8,7 @@ from sklearn.metrics import mean_absolute_error
 # from keras import Sequential, layers, regularizers, optimizers
 # from keras.callbacks import EarlyStopping
 
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LinearRegression, ElasticNet
 from sklearn.ensemble import RandomForestRegressor,ExtraTreesRegressor
 
 
@@ -28,7 +28,12 @@ implemented_model = {
         'max_features': 'sqrt',
         'min_samples_leaf': 1,
         'min_samples_split': 5
-        }
+    },
+    'ElasticNet' : {
+        'metrics' : ['mae'],
+        'L1_ratio':stats.uniform(0, 1),
+        'alpha':stats.uniform(0, 10)
+    }
 }
 
 
@@ -58,6 +63,9 @@ def initialize_model(model_name = 'LinearRegression'):
     elif model_name == 'ExtraTreesRegressor':
         print(f"ℹ️ Model: ExtraTreesRegressor, n_estimators: {implemented_model[model_name]['n_estimators']} \n")
         model = getExtraTreesRegressor(implemented_model[model_name])
+    elif model_name == 'ElasticNet':
+        print(f"ℹ️ Model: ElasticNet \n")
+        model = ElasticNet()
     print("✅ initialize_model() done \n")
 
     return model
