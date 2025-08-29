@@ -241,6 +241,10 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
         else:
             print(" - 'title' column not found; skipping non-ASCII title filtering")
 
+        # 4. Remove article not from domain name 'medium.com'
+        print(f" - Remove articles not on Medium.")
+        df = df[df['domain'] == 'medium.com']
+
     print("✅ Data cleaned")
     return df
 
