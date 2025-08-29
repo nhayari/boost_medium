@@ -27,7 +27,7 @@ def save_results(model_name,params: dict, metrics: dict) -> bool:
 
         # Save metrics locally
         if metrics is not None:
-            metrics_path = os.path.join(PATH_METRICS, "metrics", f"{model_name}_{DATA_SIZE}_{timestamp}.pickle")
+            metrics_path = os.path.join(PATH_METRICS, f"{model_name}_{DATA_SIZE}_{timestamp}.pickle")
             with open(metrics_path, "wb") as file:
                 pickle.dump(metrics, file)
 
