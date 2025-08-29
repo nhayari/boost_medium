@@ -1,6 +1,6 @@
 import numpy as np
 import time
-
+from scipy import stats
 from sklearn.metrics import mean_absolute_error
 
 # from typing import Tuple
@@ -8,29 +8,62 @@ from sklearn.metrics import mean_absolute_error
 # from keras import Sequential, layers, regularizers, optimizers
 # from keras.callbacks import EarlyStopping
 
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LinearRegression, ElasticNet
+from sklearn.ensemble import RandomForestRegressor,ExtraTreesRegressor
+
 
 implemented_model = {
     'LinearRegression': {
         'metrics': ['mae']
+       },
+    'RandomForestRegressor': {
+        'metrics': ['mae'],
+        'n_estimators':50
+    },
+    'ExtraTreesRegressor': {
+        'metrics': ['mae'],
+        'n_estimators':50
+
+    },
+    'ElasticNet' : {
+        'metrics' : ['mae'],
+        'L1_ratio':stats.uniform(0, 1),
+        'alpha':stats.uniform(0, 10)
     }
+
 }
 
-def initialize_model(model = 'LinearRegression', input_shape: tuple = None):
-    #  -> Model:
-    """
-    Initialize the Neural Network with random weights
-    """
 
-    if model not in implemented_model:
-        raise ValueError(f"Model '{model}' is not implemented.")
+def initialize_model(model_name = 'LinearRegression'):
+    """
+    Initialize the Model
 
+    Args:
+        model_name (str): Name of the model to initialize
+
+    Returns:
+        Model: Initialized model instance
+    """
+    if model_name not in implemented_model:
+        implemented_models_list = list(implemented_model.keys())
+        raise ValueError(
+        f"Model '{model_name}' is not implemented.\n"
+        f"Implemented models are: {implemented_models_list}"
+        )
     print("🎬 initialize_model starting ................\n")
-
-    if model == 'LinearRegression':
+    if model_name == 'LinearRegression':
+        print(f"ℹ️ Model: LinearRegression \n")
         model = LinearRegression()
-
-    print("🏁 initialize_model() done \n")
+    elif model_name == 'RandomForestRegressor':
+        print(f"ℹ️ Model: RandomForestRegressor, n_estimators: {implemented_model[model_name]['n_estimators']} \n")
+        model = RandomForestRegressor(n_estimators=implemented_model[model_name]['n_estimators'])
+    elif model_name == 'ExtraTreesRegressor':
+        print(f"ℹ️ Model: ExtraTreesRegressor, n_estimators: {implemented_model[model_name]['n_estimators']} \n")
+        model = ExtraTreesRegressor(n_estimators=implemented_model[model_name]['n_estimators'])
+    elif model_name == 'ElasticNet':
+        print(f"ℹ️ Model: ElasticNet \n")
+        model = ElasticNet()
+    print("✅ initialize_model() done \n")
 
     return model
 
@@ -41,20 +74,25 @@ def compile_model(model, learning_rate=0.0005):
     """
     #   print("✅ Model initialized")
     print("🎬 compile_model starting ................\n")
-    modele = None
-    print("🏁 compile_model() done \n")
+    # optimizer = optimizers.Adam(learning_rate=learning_rate)
+    # model.compile(loss="mean_squared_error", optimizer=optimizer, metrics=["mae"])
     print("✅ Model compiled")
     return model
 
+
 def train_model(model, X=None, y=None):
     """
-    Fit the model and return  model or tuple (fitted_model, history)
+    Fit the model and return model
     """
     print("🎬 train_model starting ................\n")
-    metrics = None
-    model.fit(X, y)
-    print("🏁 train_model() done \n")
 
+    if X is None or y is None or len(X) == 0 or len(y) == 0 or len(X) != len(y):
+        print("⚠️ Skipping model training due to invalid data ! None or Length")
+        return model
+
+    # Effectuer l'entraînement
+    model.fit(X, y)
+    print("✅ train_model() done \n")
     return model
 
 
@@ -70,7 +108,10 @@ def evaluate_model (model, X=None, y=None):
         if metric == 'mae':
             y_pred = model.predict(X)
             metrics[metric] = mean_absolute_error(y, y_pred)
+        else:
+            print("⚠️ Skipping  !! metric must be added in implemented_model.")
+            print("🏁 evaluate_model() end \n")
 
-    print("🏁 evaluate_model() done \n")
+    print("✅ evaluate_model() done \n")
 
     return metrics

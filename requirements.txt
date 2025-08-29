@@ -12,6 +12,7 @@ nltk
 textblob
 textstat
 
+tensorflow
 # API
 fastapi==0.108.0
 

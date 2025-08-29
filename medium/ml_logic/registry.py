@@ -9,7 +9,7 @@ import pickle
 
 from medium.params import *
 
-def save_results(params: dict, metrics: dict) -> bool:
+def save_results(model_name,params: dict, metrics: dict) -> bool:
     """
     Persist params & metrics locally on the hard drive at
     "{LOCAL_REGISTRY_PATH}/params/{current_timestamp}.pickle"
@@ -21,17 +21,17 @@ def save_results(params: dict, metrics: dict) -> bool:
 
         # Save params locally
         if params is not None:
-            params_path = os.path.join(LOCAL_REGISTRY_PATH, "params", f"{MODEL_TYPE}_{DATA_SIZE}_{timestamp}.pickle")
+            params_path = os.path.join(PATH_PARAMAS, f"{model_name}_{DATA_SIZE}_{timestamp}.pickle")
             with open(params_path, "wb") as file:
                 pickle.dump(params, file)
 
         # Save metrics locally
         if metrics is not None:
-            metrics_path = os.path.join(LOCAL_REGISTRY_PATH, "metrics", f"{MODEL_TYPE}_{DATA_SIZE}_{timestamp}.pickle")
+            metrics_path = os.path.join(PATH_METRICS, f"{model_name}_{DATA_SIZE}_{timestamp}.pickle")
             with open(metrics_path, "wb") as file:
                 pickle.dump(metrics, file)
 
-        print("🏁 save_results() done \n")
+        print(f" ✅ save_results() done \n")
     except Exception as e:
         print(f"Error saving results: {e}")
         return False
@@ -48,10 +48,11 @@ def save_model(model) -> bool:
     try:
         print("🎬 save_model starting ................\n")
         timestamp = time.strftime("%Y%m%d-%H%M%S")
-        model_path = os.path.join(LOCAL_REGISTRY_PATH, "models", f"{MODEL_TYPE}_{DATA_SIZE}_{timestamp}.pickle")
+        # model_path = os.path.join(LOCAL_REGISTRY_PATH, "models", f"{MODEL_TYPE}_{DATA_SIZE}_{timestamp}.pickle")
+        model_path = os.path.join(PATH_MODELS, f"{model.__class__.__name__}_{DATA_SIZE}_{timestamp}.pickle")
         with open(model_path, "wb") as file:
             pickle.dump(model, file)
-        print("🏁 save_model() done \n")
+        print(f" ✅ save_model() done \n")
     except Exception as e:
         print(f"Error saving model: {e}")
         return False
@@ -59,7 +60,7 @@ def save_model(model) -> bool:
     return True
 
 
-def load_model(stage="Production"):
+def load_model(model_name: str):
     """
     Return a saved model:
 
@@ -69,17 +70,18 @@ def load_model(stage="Production"):
         print("🎬 load_model starting ................\n")
 
         # Get the latest model version name by the timestamp on disk
-        local_model_directory = os.path.join(LOCAL_REGISTRY_PATH, "models")
-        local_model_paths = glob.glob(f"{local_model_directory}/{MODEL_TYPE}_{DATA_SIZE}_*.pickle")
-
+        local_model_directory = os.path.join(PATH_MODELS,"")
+        local_model_paths = glob.glob(f"{local_model_directory}/{model_name}_{DATA_SIZE}_*.pickle")
+        print(f" ℹ️  chemin des models : {local_model_directory} ")
         if not local_model_paths:
+            print(f" 🛑  aucun model chargé !!")
             return None
 
         most_recent_model_path_on_disk = sorted(local_model_paths)[-1]
         try:
             with open(most_recent_model_path_on_disk, "rb") as file:
                 model = pickle.load(file)
-                print("🏁 load_model() done \n")
+                print(f" ✅ load_model() done \n")
                 return model
         except Exception as e:
             print(f"Error loading model: {e}")
@@ -89,25 +91,26 @@ def load_model(stage="Production"):
         return None
 
 
-def save_preprocessor(preprocessor) -> bool:
+def save_preprocessor(preprocessor,name:str='preprocessor') -> bool:
     """
     Save the preprocessor object locally on the hard drive at
-    "{LOCAL_REGISTRY_PATH}/preprocessor/{current_timestamp}.pickle"
+    "{PATH_PREPROCESSOR}/{current_timestamp}.pickle"
     """
     try:
         print("🎬 save_preprocessor starting ................\n")
         timestamp = time.strftime("%Y%m%d-%H%M%S")
-        preprocessor_path = os.path.join(LOCAL_REGISTRY_PATH, "preprocessor", f"{MODEL_TYPE}_{DATA_SIZE}_preprocessor_{timestamp}.pickle")
+        preprocessor_path = os.path.join(PATH_PREPROCESSOR,f"{name}_{DATA_SIZE}_{timestamp}.pickle")
         with open(preprocessor_path, "wb") as file:
             pickle.dump(preprocessor, file)
-        print("🏁 save_preprocessor() done \n")
+        print(f" ✅ save_preprocessor() done \n")
     except Exception as e:
         print(f"Error saving preprocessor: {e}")
         return False
 
     return True
 
-def load_preprocessor():
+
+def load_preprocessor(name:str='preprocessor'):
     """
     Load the preprocessor object from disk.
     """
@@ -115,9 +118,9 @@ def load_preprocessor():
         print("🎬 load_preprocessor starting ................\n")
 
         # Get the latest preprocessor version name by the timestamp on disk
-        local_preprocessor_directory = os.path.join(LOCAL_REGISTRY_PATH, "preprocessor")
-        local_preprocessor_paths = glob.glob(f"{local_preprocessor_directory}/{MODEL_TYPE}_{DATA_SIZE}_preprocessor_*.pickle")
-
+        local_preprocessor_directory = os.path.join(PATH_PREPROCESSOR,"")
+        local_preprocessor_paths = glob.glob(f"{local_preprocessor_directory}/{name}_{DATA_SIZE}_*.pickle")
+        # à vérifier la récupération du dernier !!
         if not local_preprocessor_paths:
             return None
 
@@ -125,7 +128,7 @@ def load_preprocessor():
         try:
             with open(most_recent_preprocessor_path_on_disk, "rb") as file:
                 preprocessor = pickle.load(file)
-                print("🏁 load_preprocessor() done \n")
+                print(f"✅ load_preprocessor() done \n")
                 return preprocessor
         except Exception as e:
             print(f"Error loading preprocessor: {e}")

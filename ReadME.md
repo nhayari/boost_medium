@@ -42,6 +42,7 @@
   mkdir -p ~/medium/params/
   mkdir -p ~/medium/models/
   mkdir -p ~/medium/preprocessor/
+  mkdir -p ~/medium/metrics/
   ```
 
 

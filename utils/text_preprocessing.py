@@ -81,7 +81,7 @@ def advanced_text_clean(text: str, remove_html: bool = True, remove_stop: bool =
     if remove_html:
         text = strip_html_content(text)
     text = basic_text_clean(text)
-    # text = remove_non_ascii(text)
+    text = remove_non_ascii(text)
     if remove_stop:
         text = remove_stopwords(text, language)
     if stem:
