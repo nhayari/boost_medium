@@ -299,3 +299,17 @@ def preprocess_features(df: pd.DataFrame, chunksize: int, remove_punct: bool,
     print("🏁 preprocess_features() done \n")
 
     return df_processed_final, tf_idf_vectorizer
+
+def preprocess_pred(data: pd.DataFrame,preprocessor:any ) -> np.ndarray:
+    print("🎬 preprocess_pred starting ................\n")
+
+    data['text_lemmatized'] = data['content'].apply(tokenize_and_lemmatize)
+    X_processed = preprocessor.transform(data['text_lemmatized'])
+    X_processed = pd.DataFrame(X_processed.toarray(),
+                    columns = preprocessor.get_feature_names_out())
+
+    # # Concat
+    # df_processed = pd.concat([X_processed, data['log1p_recommends']], axis=1)
+    print("✅ preprocess_pred() done \n")
+
+    return X_processed
