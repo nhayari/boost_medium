@@ -12,3 +12,6 @@ def encode_domain(col: pd.Series):
 
 def encode_referrer(col: pd.Series):
     return (col == 'origin').astype(int)
+
+def encode_robots(col: pd.Series):
+    return (col == 'index, follow').astype(int)

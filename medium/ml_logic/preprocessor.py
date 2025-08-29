@@ -9,11 +9,12 @@ from nltk.stem import WordNetLemmatizer
 from textblob import TextBlob
 from html import unescape
 from textstat import flesch_reading_ease, flesch_kincaid_grade
-from utils.text_preprocessing import remove_non_ascii, remove_punctuation, remove_stopwords, replace_numbers, remove_extra_whitespace
+from utils.text_preprocessing import remove_non_ascii, remove_punctuation, remove_stopwords, remove_extra_whitespace
 from medium.ml_logic.data import clean_data
+from medium.ml_logic.encoders import encode_referrer, encode_domain, encode_robots, encode_zero_ones
 # from sklearn.pipeline import make_pipeline
 # from sklearn.compose import ColumnTransformer, make_column_transformer
-# from sklearn.preprocessing import OneHotEncoder, FunctionTransformer
+from sklearn.preprocessing import StandardScaler
 
 HTML_TAG_PATTERN = re.compile(r'<[^>]+>')
 WHITESPACE_PATTERN = re.compile(r'\s+')
@@ -220,7 +221,6 @@ def clean_text(df: pd.DataFrame, text_col: str, drop_punctuation: bool,
 def tokenize_and_lemmatize(text):
     #tokenize
     tokens = word_tokenize(text)
-    tokens = replace_numbers(tokens)  # Remove punctuation/numbers
 
     #lemmatize
     tokens_lemmatized = [WordNetLemmatizer().lemmatize(word)
@@ -230,7 +230,7 @@ def tokenize_and_lemmatize(text):
     return (' '.join(tokens_lemmatized)).strip()
 
 def preprocess_features(df: pd.DataFrame, chunksize: int, remove_punct: bool,
-                        remove_stopwords: bool) -> np.ndarray:
+                        remove_stopwords: bool, tf_idf_min_ratio: float = 0.02):
     print("🎬 Preprocessing start... \n")
     df_processing = df.copy()
     df_processing = clean_data(df_processing)
@@ -275,14 +275,15 @@ def preprocess_features(df: pd.DataFrame, chunksize: int, remove_punct: bool,
 
     # Instantiating the TfidfVectorizer
     print(" - Vectorizing text data with TF-IDF...")
-    tf_idf_vectorizer = TfidfVectorizer(min_df=0.02)
+    tf_idf_vectorizer = TfidfVectorizer(min_df=tf_idf_min_ratio)
     df_content = df_final[['content']]
+    df_final = df_final.drop(columns=['content', 'title'])
 
     y = df_final['log1p_recommends']
     df_final = df_final.drop(columns='log1p_recommends')
 
+    # Tokenize and lemmatize content
     df_final['text_lemmatized'] = df_content['content'].apply(tokenize_and_lemmatize)
-    df_final = df_final.drop(columns=['content', 'title'])
 
     # Training it on the texts
     X_processed = tf_idf_vectorizer.fit_transform(df_final['text_lemmatized'])
@@ -290,17 +291,39 @@ def preprocess_features(df: pd.DataFrame, chunksize: int, remove_punct: bool,
     X_processed = pd.DataFrame(X_processed.toarray(),
                     columns = tf_idf_vectorizer.get_feature_names_out(),
                     index=df_final.index)
-    print(X_processed.shape)
+
+    # Encode columns
+    print("Encoding the columns...")
+    df_final['image_url'] = encode_zero_ones(df_final['image_url'])
+    df_final['link_tags_amphtml'] = encode_zero_ones(df_final['link_tags_amphtml'])
+    df_final['domain'] = encode_domain(df_final['domain'])
+    df_final['meta_tags_referrer'] = encode_referrer(df_final['meta_tags_referrer'])
+    df_final['meta_tags_robots'] = encode_robots(df_final['meta_tags_robots'])
+
+    # Scale metadata columns
+    print("Scaling the numerical columns...")
+    scaler = StandardScaler()
+
+    cols_to_scale = ['publication_year', 'publication_month',
+       'publication_day', 'publication_dayofweek', 'publication_hour',
+       'days_since_publication', 'title_length', 'title_word_count',
+       'title_unique_word_count', 'reading_time', 'content_length',
+       'content_word_count', 'content_unique_word_count',
+       'content_has_numbers', 'content_is_question', 'content_num_links',
+       'content_num_images', 'content_num_lists', 'content_num_paragraphs',
+       'content_num_h1', 'content_num_h2', 'content_num_h3',
+       'readability_score', 'grade_level']
+
+    df_final[cols_to_scale] = scaler.fit_transform(df_final[cols_to_scale])
 
     # Concat
-    print(df_final.shape, X_processed.shape, y.shape)
     df_processed_final = pd.concat([df_final, X_processed, y], axis=1)
     print(df_processed_final.shape)
     print("🏁 preprocess_features() done \n")
 
     return df_processed_final, tf_idf_vectorizer
 
-def preprocess_pred(data: pd.DataFrame,preprocessor:any ) -> np.ndarray:
+def preprocess_pred(data: pd.DataFrame,preprocessor:any ):
     print("🎬 preprocess_pred starting ................\n")
 
     data['text_lemmatized'] = data['content'].apply(tokenize_and_lemmatize)
