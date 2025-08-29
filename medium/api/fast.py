@@ -27,9 +27,14 @@ def predict( text: str ):
     # X_processed = ????
     # y_pred = ????
     # return {'recommandations':  ??? }
-    pass
-
+    return 'coucou'
 
 @app.get("/")
 def root():
     return {'To do ': 'Home Page'}
+
+
+
+@app.get("/ping")
+def ping():
+    return "pong"
