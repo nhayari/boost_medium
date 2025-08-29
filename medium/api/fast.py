@@ -9,13 +9,13 @@ app = FastAPI()
 # app.state.model = load_model()
 
 # Allowing all middleware is optional, but good practice for dev purposes
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins
-    allow_credentials=True,
-    allow_methods=["*"],  # Allows all methods
-    allow_headers=["*"],  # Allows all headers
-)
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=["*"],  # Allows all origins
+#     allow_credentials=True,
+#     allow_methods=["*"],  # Allows all methods
+#     allow_headers=["*"],  # Allows all headers
+# )
 
 
 @app.get("/predict")
@@ -24,9 +24,18 @@ def predict(model_name:str, text: str ):
     Make a single course prediction.
     Assumes `text` is provided by the user
     """
-    return pred(model_name, text)
-
+    # model =  ????
+    # X_processed = ????
+    # y_pred = ????
+    # return {'recommandations':  ??? }
+    return 'coucou'
 
 @app.get("/")
 def root():
     return {'To do ': 'Home Page'}
+
+
+
+@app.get("/ping")
+def ping():
+    return "pong"
