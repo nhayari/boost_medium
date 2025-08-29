@@ -22,10 +22,13 @@ implemented_model = {
     },
     'ExtraTreesRegressor': {
         'metrics': ['mae'],
-        'n_estimators':50
-
-    }
-
+        'n_estimators':100,
+        'bootstrap': False,
+        'max_depth': None,
+        'max_features': 'sqrt',
+        'min_samples_leaf': 1,
+        'min_samples_split': 5
+        }
 }
 
 
@@ -54,7 +57,7 @@ def initialize_model(model_name = 'LinearRegression'):
         model = RandomForestRegressor(n_estimators=implemented_model[model_name]['n_estimators'])
     elif model_name == 'ExtraTreesRegressor':
         print(f"ℹ️ Model: ExtraTreesRegressor, n_estimators: {implemented_model[model_name]['n_estimators']} \n")
-        model = ExtraTreesRegressor(n_estimators=implemented_model[model_name]['n_estimators'])
+        model = getExtraTreesRegressor(implemented_model[model_name])
     print("✅ initialize_model() done \n")
 
     return model
@@ -107,3 +110,20 @@ def evaluate_model (model, X=None, y=None):
     print("✅ evaluate_model() done \n")
 
     return metrics
+
+
+# model_dict= implemented_model[model_name]
+def getExtraTreesRegressor(model_dict):
+    """
+    Initialise model ExtraTreeRegressor with params
+    Args:
+        model_dict (dict): params
+
+    Returns:
+        Model: Initialized model instance
+    """
+    model = ExtraTreesRegressor(n_estimators=model_dict['n_estimators'], bootstrap=model_dict['bootstrap'],
+                                max_depth=model_dict['max_depth'],max_features=model_dict['max_features'], min_samples_leaf=model_dict['min_samples_leaf'],
+                                min_samples_split=model_dict['min_samples_split'])
+
+    return model

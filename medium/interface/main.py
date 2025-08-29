@@ -110,7 +110,7 @@ def evaluate(model_name:str, X_pred: pd.DataFrame = None, ):
     print(f" ℹ️ the model type : {model.__class__.__name__} ... ")
 
     X_processed = preprocess_pred(data_cleaned,preprocessor)
-    print(f" ℹ️ X_processed : {type(X_processed)} - { X_processed.shape}")
+    print(f" ℹ️ X_processed shape :  { X_processed.shape}")
 
     y_pred = model.predict(X_processed)
 
@@ -130,7 +130,7 @@ def evaluate(model_name:str, X_pred: pd.DataFrame = None, ):
     date_run = time.strftime("%Y%m%d-%H%M%S")
     target_path= os.path.join(PATH_METRICS, f"metrics_{DATA_SIZE}_{model.__class__.__name__}_{date_run}.csv")
     results_df.to_csv(target_path, index=False)
-    print(f" ✅ = = = = = = = = => mean_absolute_error : {mae} one  \n")
+    print(f" ✅ = = = = = = = = => mean_absolute_error : {mae} \n")
     print(f" ✅ evaluate done \n")
     return mae
 
