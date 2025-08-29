@@ -1,23 +1,25 @@
 import numpy as np
 import time
-
 from sklearn.metrics import mean_absolute_error
 
 # from typing import Tuple
 # from tensorflow import keras
 # from keras import Sequential, layers, regularizers, optimizers
 # from keras.callbacks import EarlyStopping
-
-from sklearn.linear_model import LinearRegression
+from medium.ml_logic.registry import load_model
+from sklearn.linear_model import LinearRegression, ElasticNet
 
 implemented_model = {
     'LinearRegression': {
         'metrics': ['mae']
+    },
+    'ElasticNet': {
+        'metrics': ['neg_mean_absolute_error']
     }
 }
 
-def initialize_model(model = 'LinearRegression', input_shape: tuple = None):
-    #  -> Model:
+def initialize_model(model, input_shape: tuple = None):
+
     """
     Initialize the Neural Network with random weights
     """
@@ -29,6 +31,9 @@ def initialize_model(model = 'LinearRegression', input_shape: tuple = None):
 
     if model == 'LinearRegression':
         model = LinearRegression()
+
+    elif model == 'ElasticNet':
+        model = ElasticNet()
 
     print("🏁 initialize_model() done \n")
 
@@ -70,6 +75,9 @@ def evaluate_model (model, X=None, y=None):
         if metric == 'mae':
             y_pred = model.predict(X)
             metrics[metric] = mean_absolute_error(y, y_pred)
+        elif metric == 'neg_mean_absolute_error':
+            y_pred = model.predict(X)
+            metrics[metric] = -mean_absolute_error(y, y_pred)
 
     print("🏁 evaluate_model() done \n")
 

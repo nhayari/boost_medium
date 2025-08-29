@@ -69,7 +69,7 @@ def train(
 
     if model is None:
         # Initialiser le modèle
-        model = initialize_model(model = 'LinearRegression', input_shape=(X_train.shape[1],))
+        model = initialize_model(model, input_shape=(X_train.shape[1],))
 
     model = train_model(model=model, X=X_train, y=y_train)
 
