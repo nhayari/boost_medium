@@ -9,10 +9,14 @@ seaborn
 scikit-learn
 jsonlines
 nltk
-tensorflow
+# tensorflow
 streamlit
 # API
-fastapi==0.108.0
-
+# fastapi==0.108.0
+fastapi
+xgboost
+lightgbm
+# catboost>=1.0.0 --prefer-binary
+catboost
 # pytz
 uvicorn
