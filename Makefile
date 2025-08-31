@@ -87,5 +87,5 @@ run_all:
 # workflow:
 # 	PREFECT__LOGGING__LEVEL=${PREFECT_LOG_LEVEL} python -m medium.interface.workflow
 
-# as_service:
-# 	uvicorn medium.api.fast:app --reload
+as_service:
+uvicorn medium.api.fast:app --reload

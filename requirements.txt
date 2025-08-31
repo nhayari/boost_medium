@@ -9,7 +9,9 @@ seaborn
 scikit-learn
 jsonlines
 nltk
-# tensorflow
+textblob
+textstat
+tensorflow
 streamlit
 # API
 # fastapi==0.108.0
