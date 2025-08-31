@@ -249,11 +249,35 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def create_dataframe_to_predict(text:str="", title:str=""):
+def create_dataframe_to_predict(text: str = "", title: str = ""):
+    """
+    Create a DataFrame for prediction with all required columns for the preprocessing pipeline.
+    """
+    import pandas as pd
+    from datetime import datetime
+    import time
+    
+    # Create a comprehensive DataFrame with all expected columns
+    current_time = datetime.now()
+    timestamp = int(time.time())
+    
     df = pd.DataFrame({
-            'content': [text],
-            'title': [title],
-            'tags':[""]
-    }
-    )
+        'content': [text],
+        'title': [title],
+        'tags': [""],
+        'domain': ['medium.com'],  # Required for cleaning
+        'published': [current_time.isoformat()],  # Will become 'published_$date' after flattening
+        '_timestamp': [timestamp],
+        'author': ['Unknown'],
+        'image_url': [None],
+        'link_tags': [{}],
+        'meta_tags': [{
+            'twitter:data1': '5 min read',
+            'referrer': 'origin'
+        }],
+        '_id': ['pred_001'],
+        '_spider': ['prediction'],
+        'url': ['https://medium.com/prediction']
+    })
+    
     return df

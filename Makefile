@@ -12,7 +12,7 @@ help:
 	@echo "> make evaluate  model_name=    - Evaluer le modèle"
 	@echo "> make run_all model_name=      - run in the order : preprocess -> train -> evaluate"
 	@echo "> make pred text=               - text must be in '  '"
-	@echo " ! actually model_name : ExtraTreesRegressor or RandomForestRegressor or LinearRegression."
+	@echo " ! actually model_name : ExtraTreesRegressor or RandomForestRegressor or LinearRegression or XGBRegressor."
 	@echo "------ ✅ Fin des Commandes."
 
 
