@@ -8,8 +8,11 @@ from sklearn.metrics import mean_absolute_error
 # from keras import Sequential, layers, regularizers, optimizers
 # from keras.callbacks import EarlyStopping
 
-from sklearn.linear_model import LinearRegression, ElasticNet
-from sklearn.ensemble import RandomForestRegressor,ExtraTreesRegressor
+from sklearn.linear_model import LinearRegression, ElasticNet,Ridge
+from sklearn.ensemble import RandomForestRegressor, ExtraTreesRegressor, GradientBoostingRegressor
+# from sklearn.svm import SVR
+from lightgbm import LGBMRegressor
+from xgboost import XGBRegressor
 
 
 implemented_model = {
@@ -33,6 +36,27 @@ implemented_model = {
         'metrics' : ['mae'],
         'L1_ratio':stats.uniform(0, 1),
         'alpha':stats.uniform(0, 10)
+    },
+    'Ridge' : {
+        'metrics' : ['mae'],
+        'alpha':1.0
+    },
+    'XGBRegressor' : {
+       'n_estimators': 200,
+       'learning_rate': 0.05,
+       'eval_metric': 'mae',
+       'objective' :'reg:squarederror'
+    },
+    'LGBMRegressor': {
+        'n_estimators': 200,
+        'learning_rate':0.05,
+        'metric': 'mae',
+        'objective' : 'regression'
+    },
+    'GradientBoostingRegressor': {
+        'n_estimators': 100,
+        'learning_rate':0.1,
+        'loss':'absolute_error'
     }
 }
 
@@ -66,6 +90,19 @@ def initialize_model(model_name = 'LinearRegression'):
     elif model_name == 'ElasticNet':
         print(f"ℹ️ Model: ElasticNet \n")
         model = ElasticNet()
+    elif model_name == 'Ridge':
+        print(f"ℹ️ Model: Ridge \n")
+        model = getRidge(implemented_model[model_name])
+    elif model_name == 'XGBRegressor':
+        print(f"ℹ️ Model: XGBRegressor \n")
+        model = getXGBRegressor(implemented_model[model_name])
+    elif model_name == 'LGBMRegressor':
+        print(f"ℹ️ Model: LGBMRegressor \n")
+        model = getLGBMRegressor(implemented_model[model_name])
+    elif model_name == 'GradientBoostingRegressor':
+        print(f"ℹ️ Model: GradientBoostingRegressor \n")
+        model = getGradientBoostingRegressor(implemented_model[model_name])
+
     print("✅ initialize_model() done \n")
 
     return model
@@ -134,4 +171,64 @@ def getExtraTreesRegressor(model_dict):
                                 max_depth=model_dict['max_depth'],max_features=model_dict['max_features'], min_samples_leaf=model_dict['min_samples_leaf'],
                                 min_samples_split=model_dict['min_samples_split'])
 
+    return model
+
+
+def getRidge(model_dict):
+    """
+    Initialise model Ridge with params
+    Args:
+        model_dict (dict): params
+    Returns:
+        Model: Initialized model instance
+    """
+    model = Ridge(alpha=model_dict['alpha'])
+    return model
+
+def getXGBRegressor(model_dict):
+    """
+    Initialise model XGBRegressor with params
+    Args:
+        model_dict (dict): params
+
+    Returns:
+        Model: Initialized model instance
+    """
+    model = XGBRegressor(n_estimators=model_dict['n_estimators'],
+                         learning_rate=model_dict['learning_rate'],
+                         eval_metric=model_dict['eval_metric'],
+                         objective=model_dict['objective']
+                         )
+    return model
+
+def getGradientBoostingRegressor(model_dict):
+    """
+    Initialise model GradientBoostingRegressor with params
+    Args:
+        model_dict (dict): params
+
+    Returns:
+        Model: Initialized model instance
+    """
+    model = GradientBoostingRegressor(n_estimators=model_dict['n_estimators'],
+                         learning_rate=model_dict['learning_rate'],
+                         loss=model_dict['loss']
+                         )
+    return model
+
+
+def getLGBMRegressor(model_dict):
+    """
+    Initialise model LGBMRegressor with params
+    Args:
+        model_dict (dict): params
+
+    Returns:
+        Model: Initialized model instance
+    """
+    model = LGBMRegressor(n_estimators=model_dict['n_estimators'],
+                         learning_rate=model_dict['learning_rate'],
+                         metric=model_dict['metric'],
+                         objective=model_dict['objective']
+                         )
     return model
