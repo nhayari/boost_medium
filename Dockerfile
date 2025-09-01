@@ -8,4 +8,4 @@ RUN pip install -r requirements.txt
 COPY . .
 RUN pip install .
 
-CMD uvicorn medium.api.fast:app --host 0.0.0.0 --port $PORT
+CMD uvicorn medium.api.fast:app --host 0.0.0.0 --port $PORT --reload

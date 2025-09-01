@@ -9,6 +9,7 @@ import pickle
 
 from medium.params import *
 
+
 def save_results(model_name,params: dict, metrics: dict) -> bool:
     """
     Persist params & metrics locally on the hard drive at
