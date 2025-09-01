@@ -42,18 +42,21 @@ implemented_model = {
         'alpha':1.0
     },
     'XGBRegressor' : {
+        'metrics' : ['mae'],
        'n_estimators': 200,
        'learning_rate': 0.05,
        'eval_metric': 'mae',
        'objective' :'reg:squarederror'
     },
     'LGBMRegressor': {
+        'metrics' : ['mae'],
         'n_estimators': 200,
         'learning_rate':0.05,
         'metric': 'mae',
         'objective' : 'regression'
     },
     'GradientBoostingRegressor': {
+        'metrics' : ['mae'],
         'n_estimators': 100,
         'learning_rate':0.1,
         'loss':'absolute_error'
@@ -155,6 +158,10 @@ def evaluate_model (model, X=None, y=None):
     print("✅ evaluate_model() done \n")
 
     return metrics
+
+
+
+
 
 
 # model_dict= implemented_model[model_name]
