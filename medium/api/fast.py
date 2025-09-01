@@ -9,7 +9,8 @@ from medium.ml_logic.model import *
 
 app = FastAPI()
 
-app.state.model = load_model(model_name='LinearRegression')
+app.state.model = load_model(model_name='Ridge')
+
 
 
 # Allowing all middleware is optional, but good practice for dev purposes
@@ -28,8 +29,9 @@ def predict(model_name:str, text: str ):
     Make a single course prediction.
     Assumes `text` is provided by the user
     """
+    app.state.model = load_model(model_name=model_name)
     model = app.state.model
-    X_processed = MediumPreprocessingPipeline
+    X_processed = MediumPreprocessingPipeline()
     y_pred = model.predict(X_processed)
     return {'recommandations': y_pred}
 
