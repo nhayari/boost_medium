@@ -17,12 +17,6 @@ from sklearn.ensemble import RandomForestRegressor, ExtraTreesRegressor, Gradien
 # from sklearn.svm import SVR
 from lightgbm import LGBMRegressor
 from xgboost import XGBRegressor
-try:
-    import xgboost as xgb
-    XGBOOST_AVAILABLE = True
-except ImportError:
-    XGBOOST_AVAILABLE = False
-    print("⚠️ XGBoost not available. Install with: pip install xgboost")
 from medium.ml_logic.preprocessor import MediumPreprocessingPipeline
 
 
