@@ -1,15 +1,15 @@
 import pandas as pd
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from medium.interface.main import pred
-from medium.ml_logic.registry import load_model
+from medium.ml_logic.registry import load_model,load_preprocessor
 from medium.ml_logic.preprocessor import MediumPreprocessingPipeline
 from medium.params import *
 from medium.ml_logic.model import *
 
 app = FastAPI()
 
-app.state.model = load_model(model_name='Ridge')
+# app.state.model = load_model(model_name='Ridge')
 
 
 
@@ -23,17 +23,19 @@ app.state.model = load_model(model_name='Ridge')
 # )
 
 
-@app.get("/predict")
-def predict(model_name:str, text: str ):
+@app.post("/predict")
+async def predict(request: Request):
     """
     Make a single course prediction.
     Assumes `text` is provided by the user
     """
-    app.state.model = load_model(model_name=model_name)
-    model = app.state.model
-    X_processed = MediumPreprocessingPipeline()
+    request_data = await request.json()
+    model = load_model(model_name=request_data['model_name'])
+    df_title = pd.DataFrame({'title': [request_data['title']]})
+    X_proc = load_preprocessor()
+    X_processed = X_proc.fit_transform(df_title)
     y_pred = model.predict(X_processed)
-    return {'recommandations': y_pred}
+    return {'recommandations': float(y_pred)}
 
 @app.get("/")
 def root():
@@ -44,3 +46,10 @@ def root():
 @app.get("/ping")
 def ping():
     return "pong"
+
+
+@app.get("/post_predict")
+def post_predict(request: Request):
+    request_data = request.json()
+
+    print(request_data['title'])

@@ -12,7 +12,6 @@ from medium.ml_logic.model import *
 st.set_page_config(page_title="Home Page", page_icon="🏠")
 
 
-
 st.markdown("""
     # Boost Medium Articles App
 """)

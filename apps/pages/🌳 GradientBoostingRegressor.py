@@ -5,9 +5,9 @@ import requests
 import datetime
 from medium.ml_logic.data import load_json_from_files
 
-st.set_page_config(page_title="Ridge Model Page", page_icon="📈")
+st.set_page_config(page_title="GradientBoostingRegressor Model Page", page_icon="🌳")
 
-st.title("Ridge Model ")
+st.title("GradientBoostingRegressor Model ")
 
 
 df = load_json_from_files(
@@ -25,19 +25,17 @@ st.write('The url is ', df[df['title'] == title]['url'].values[0])
 st.write('The author is ', df[df['title'] == title]['author'].iloc[0]['twitter'])
 
 
-url = 'http://0.0.0.0:8000' # 'https://boost-medium-docker-759226870731.europe-west1.run.app'
+url = 'https://boost-medium-docker-759226870731.europe-west1.run.app'
 
 
 dict_params = {
-    'model_name': 'Ridge',
+    'model_name': 'GradientBoostingRegressor',
     'title': title
 }
 
 
 
-# prediction = requests.get(url=f"{url}/predict", params=dict_params)
-
-prediction = requests.post(url=f"{url}/predict", json=dict_params)
+prediction = requests.get(url=url, params=dict_params)
 
 
 #Prediction
