@@ -25,21 +25,21 @@ WHITESPACE_PATTERN = re.compile(r'\s+')
 
 class TemporalFeatureExtractor(BaseEstimator, TransformerMixin):
     """Extract temporal features from datetime columns."""
-    
+
     def __init__(self, datetime_col: str = 'published_$date', drop_original: bool = True):
         self.datetime_col = datetime_col
         self.drop_original = drop_original
-    
+
     def fit(self, X: pd.DataFrame, y=None):
         return self
-    
+
     def transform(self, X: pd.DataFrame) -> pd.DataFrame:
         """Extract temporal features from datetime column."""
         X_transformed = X.copy()
-        
+
         if self.datetime_col not in X_transformed.columns:
             raise ValueError(f"Column '{self.datetime_col}' not found in DataFrame")
-        
+
         X_transformed[self.datetime_col] = pd.to_datetime(X_transformed[self.datetime_col])
         X_transformed['publication_year'] = X_transformed[self.datetime_col].dt.year
         X_transformed['publication_month'] = X_transformed[self.datetime_col].dt.month
@@ -47,18 +47,18 @@ class TemporalFeatureExtractor(BaseEstimator, TransformerMixin):
         X_transformed['publication_dayofweek'] = X_transformed[self.datetime_col].dt.day_of_week
         X_transformed['publication_hour'] = X_transformed[self.datetime_col].dt.hour
         X_transformed['publication_is_weekend'] = X_transformed['publication_dayofweek'].isin([5, 6]).astype(int)
-        
+
         if '_timestamp' in X_transformed.columns:
             X_transformed['days_since_publication'] = (
-                pd.to_datetime(X_transformed['_timestamp'], unit='s', utc=True) - 
+                pd.to_datetime(X_transformed['_timestamp'], unit='s', utc=True) -
                 X_transformed[self.datetime_col]
             ).dt.days
-        
+
         if self.drop_original:
             X_transformed = X_transformed.drop(columns=[self.datetime_col])
             if '_timestamp' in X_transformed.columns:
                 X_transformed = X_transformed.drop(columns=['_timestamp'])
-        
+
         return X_transformed
 
 
@@ -125,17 +125,17 @@ def extract_text_features(df: pd.DataFrame, text_col: str) -> pd.DataFrame:
 
 class TextFeatureExtractor(BaseEstimator, TransformerMixin):
     """Extract basic text features from text columns."""
-    
+
     def __init__(self, text_columns: Optional[List[str]] = None):
         self.text_columns = text_columns or ['title', 'content']
-    
+
     def fit(self, X: pd.DataFrame, y=None):
         return self
-    
+
     def transform(self, X: pd.DataFrame) -> pd.DataFrame:
         """Extract text features from specified columns."""
         X_transformed = X.copy()
-        
+
         for text_col in self.text_columns:
             if text_col in X_transformed.columns:
                 X_transformed[f'{text_col}_length'] = X_transformed[text_col].astype(str).apply(len)
@@ -143,11 +143,11 @@ class TextFeatureExtractor(BaseEstimator, TransformerMixin):
                 X_transformed[f'{text_col}_unique_word_count'] = X_transformed[text_col].astype(str).apply(lambda x: len(set(x.split())))
                 X_transformed[f'{text_col}_has_numbers'] = X_transformed[text_col].astype(str).apply(lambda x: int(any(char.isdigit() for char in x)))
                 X_transformed[f'{text_col}_is_question'] = X_transformed[text_col].astype(str).apply(lambda x: int(x.strip().endswith('?')))
-        
+
         # Extract reading time if available
         if 'meta_tags_twitter:data1' in X_transformed.columns and 'reading_time' not in X_transformed.columns:
             X_transformed['reading_time'] = X_transformed['meta_tags_twitter:data1'].astype(str).str.extract(r'(\d+)').astype(float)
-        
+
         return X_transformed
 
 
@@ -180,17 +180,17 @@ def extract_html_features(df: pd.DataFrame, html_col: str) -> pd.DataFrame:
 
 class HTMLFeatureExtractor(BaseEstimator, TransformerMixin):
     """Extract HTML features from HTML content columns."""
-    
+
     def __init__(self, html_columns: Optional[List[str]] = None):
         self.html_columns = html_columns or ['content']
-    
+
     def fit(self, X: pd.DataFrame, y=None):
         return self
-    
+
     def transform(self, X: pd.DataFrame) -> pd.DataFrame:
         """Extract HTML features from specified columns."""
         X_transformed = X.copy()
-        
+
         for html_col in self.html_columns:
             if html_col in X_transformed.columns:
                 X_transformed[f'{html_col}_num_links'] = X_transformed[html_col].astype(str).apply(lambda x: len(re.findall(r'http[s]?://', x)))
@@ -200,7 +200,7 @@ class HTMLFeatureExtractor(BaseEstimator, TransformerMixin):
                 X_transformed[f'{html_col}_num_h1'] = X_transformed[html_col].astype(str).apply(lambda x: len(re.findall(r'<h1', x)))
                 X_transformed[f'{html_col}_num_h2'] = X_transformed[html_col].astype(str).apply(lambda x: len(re.findall(r'<h2', x)))
                 X_transformed[f'{html_col}_num_h3'] = X_transformed[html_col].astype(str).apply(lambda x: len(re.findall(r'<h3', x)))
-        
+
         return X_transformed
 
 
@@ -257,33 +257,33 @@ def strip_html_tags(series: pd.Series, chunk_size: int, show_progress: bool = Tr
 
 class HTMLTagStripper(BaseEstimator, TransformerMixin):
     """Strip HTML tags from text columns."""
-    
+
     def __init__(self, text_columns: Optional[List[str]] = None, chunk_size: int = 1000, show_progress: bool = True):
         self.text_columns = text_columns or ['content']
         self.chunk_size = chunk_size
         self.show_progress = show_progress
-    
+
     def fit(self, X: pd.DataFrame, y=None):
         return self
-    
+
     def transform(self, X: pd.DataFrame) -> pd.DataFrame:
         """Strip HTML tags from specified columns."""
         X_transformed = X.copy()
-        
+
         def strip_tags_regex_compiled(html):
             """Use pre-compiled regex patterns for maximum speed."""
             if pd.isna(html):
                 return html
-            
+
             # Remove HTML tags with compiled regex
             clean = HTML_TAG_PATTERN.sub('', html)
             # Decode HTML entities
             clean = unescape(clean)
             # Clean up whitespace with compiled regex
             clean = WHITESPACE_PATTERN.sub(' ', clean).strip()
-            
+
             return clean
-        
+
         for text_col in self.text_columns:
             if text_col in X_transformed.columns:
                 if self.show_progress:
@@ -293,12 +293,12 @@ class HTMLTagStripper(BaseEstimator, TransformerMixin):
                     except ImportError:
                         print("Install tqdm for progress tracking: pip install tqdm")
                         self.show_progress = False
-                
+
                 # Process in chunks to manage memory
                 series = X_transformed[text_col]
                 for i in range(0, len(series), self.chunk_size):
                     end_idx = min(i + self.chunk_size, len(series))
-                    
+
                     # Get chunk
                     chunk_mask = series.iloc[i:end_idx].notna()
                     if chunk_mask.any():
@@ -306,15 +306,15 @@ class HTMLTagStripper(BaseEstimator, TransformerMixin):
                         chunk_indices = series.iloc[i:end_idx][chunk_mask].index
                         for idx in chunk_indices:
                             series.loc[idx] = strip_tags_regex_compiled(series.loc[idx])
-                    
+
                     if self.show_progress and 'progress_bar' in locals():
                         progress_bar.update(end_idx - i)
-                
+
                 if self.show_progress and 'progress_bar' in locals():
                     progress_bar.close()
-                
+
                 X_transformed[text_col] = series
-        
+
         return X_transformed
 
 
@@ -348,32 +348,32 @@ def extract_nlp_features(df: pd.DataFrame, text_col: str) -> pd.DataFrame:
 
 class NLPFeatureExtractor(BaseEstimator, TransformerMixin):
     """Extract NLP features like readability scores and sentiment analysis."""
-    
+
     def __init__(self, text_columns: Optional[List[str]] = None):
         self.text_columns = text_columns or ['content']
-    
+
     def fit(self, X: pd.DataFrame, y=None):
         return self
-    
+
     def transform(self, X: pd.DataFrame) -> pd.DataFrame:
         """Extract NLP features from specified columns."""
         X_transformed = X.copy()
-        
+
         for text_col in self.text_columns:
             if text_col in X_transformed.columns:
                 # Readability scores
                 X_transformed[f'{text_col}_readability_score'] = X_transformed[text_col].apply(flesch_reading_ease)
                 X_transformed[f'{text_col}_grade_level'] = X_transformed[text_col].apply(flesch_kincaid_grade)
-                
+
                 # Sentiment analysis
                 X_transformed[f'{text_col}_sentiment'] = X_transformed[text_col].apply(
                     lambda x: TextBlob(x[:5000]).sentiment.polarity if len(str(x)) > 0 else 0 #type: ignore
                 )
-        
+
         # Special case for title sentiment
         if 'title' in X_transformed.columns:
             X_transformed['title_sentiment'] = X_transformed['title'].apply(lambda x: TextBlob(str(x)).sentiment.polarity) #type: ignore
-        
+
         return X_transformed
 
 
@@ -416,37 +416,37 @@ def clean_text(df: pd.DataFrame, text_col: str, drop_punctuation: bool,
 
 class TextCleaner(BaseEstimator, TransformerMixin):
     """Clean text data by lowercasing, removing punctuation, and stopwords."""
-    
+
     def __init__(self, text_columns: Optional[List[str]] = None, drop_punctuation: bool = True, drop_stopwords: bool = True):
         self.text_columns = text_columns or ['content']
         self.drop_punctuation = drop_punctuation
         self.drop_stopwords = drop_stopwords
-    
+
     def fit(self, X: pd.DataFrame, y=None):
         return self
-    
+
     def transform(self, X: pd.DataFrame) -> pd.DataFrame:
         """Clean text in specified columns."""
         X_transformed = X.copy()
-        
+
         def clean_single_text(text):
             if not isinstance(text, str):
                 return ""
             text = text.lower()
-            
+
             if self.drop_punctuation:
                 text = remove_punctuation(text)
             if self.drop_stopwords:
                 text = remove_stopwords(text)
-            
+
             text = remove_non_ascii(text)
             text = remove_extra_whitespace(text)
             return text
-        
+
         for text_col in self.text_columns:
             if text_col in X_transformed.columns:
                 X_transformed[text_col] = X_transformed[text_col].apply(clean_single_text)
-        
+
         return X_transformed
 
 
@@ -464,41 +464,41 @@ def tokenize_and_lemmatize(text):
 
 class TokenizerLemmatizer(BaseEstimator, TransformerMixin):
     """Tokenize and lemmatize text columns."""
-    
+
     def __init__(self, text_columns: Optional[List[str]] = None, output_suffix: str = '_lemmatized'):
         self.text_columns = text_columns or ['content']
         self.output_suffix = output_suffix
         self.lemmatizer = None
-    
+
     def fit(self, X: pd.DataFrame, y=None):
         # Initialize lemmatizer during fit
         self.lemmatizer = WordNetLemmatizer()
         return self
-    
+
     def transform(self, X: pd.DataFrame) -> pd.DataFrame:
         """Tokenize and lemmatize text in specified columns."""
         X_transformed = X.copy()
-        
+
         if self.lemmatizer is None:
             self.lemmatizer = WordNetLemmatizer()
-        
+
         def tokenize_and_lemmatize_text(text):
             if not isinstance(text, str) or len(text.strip()) == 0:
                 return ""
-            
+
             # Tokenize
             tokens = word_tokenize(text)
-            
+
             # Lemmatize
             tokens_lemmatized = [self.lemmatizer.lemmatize(word) for word in tokens] if self.lemmatizer else tokens
-            
+
             return (' '.join(tokens_lemmatized)).strip()
-        
+
         for text_col in self.text_columns:
             if text_col in X_transformed.columns:
                 output_col = f'{text_col}{self.output_suffix}'
                 X_transformed[output_col] = X_transformed[text_col].apply(tokenize_and_lemmatize_text)
-        
+
         return X_transformed
 
 
@@ -668,16 +668,19 @@ def preprocess_pred(data: pd.DataFrame,preprocessor:any ): #type: ignore
 
 class MediumPreprocessingPipeline(BaseEstimator, TransformerMixin):
     """Complete preprocessing pipeline for Medium articles data."""
-    
+
     def __init__(
         self,
         datetime_col: str = 'published_$date',
         text_columns: Optional[List[str]] = None,
         html_columns: Optional[List[str]] = None,
         chunk_size: int = 1000,
-        remove_punct: bool = True,
-        remove_stopwords: bool = True,
+        remove_punct: bool = False,
+        remove_stopwords: bool = False,
         tf_idf_min_ratio: float = 0.02,
+        metadata_only: bool = False,
+        content_only: bool = False,
+        model_is_tree: bool = False,
         show_progress: bool = True
     ):
         self.datetime_col = datetime_col
@@ -688,50 +691,53 @@ class MediumPreprocessingPipeline(BaseEstimator, TransformerMixin):
         self.remove_stopwords = remove_stopwords
         self.tf_idf_min_ratio = tf_idf_min_ratio
         self.show_progress = show_progress
-        
+        self.metadata_only = metadata_only
+        self.content_only = content_only
+        self.model_is_tree = model_is_tree
+
         # Initialize transformers
         self.tfidf_vectorizer = None
         self.std_scaler = None
         self.feature_columns_ = None
         self.tfidf_feature_names_ = None
-        
+
     def fit(self, X: pd.DataFrame, y=None):
         """Fit the preprocessing pipeline."""
         print("🎬 Fitting preprocessing pipeline...")
-        
+
         # Clean data first - this may remove rows, so we need to track indices
         X_clean = clean_data(X.copy())
-        
+
         # Remove unnecessary columns
         X_clean = self._remove_unnecessary_columns(X_clean)
-        
+
         # Apply all transformations to learn parameters
         X_transformed = self._apply_transformations(X_clean, fit=True)
-        
+
         # Store feature columns for consistency
         self.feature_columns_ = X_transformed.columns.tolist()
         if 'log1p_recommends' in self.feature_columns_:
             self.feature_columns_.remove('log1p_recommends')
-        
+
         print("✅ Preprocessing pipeline fitted successfully!")
         return self
-    
+
     def transform(self, X: pd.DataFrame) -> pd.DataFrame:
         """Transform data using fitted pipeline."""
         print("🎬 Transforming data with preprocessing pipeline...")
-        
+
         # Clean data first
         X_clean = clean_data(X.copy())
-        
+
         # Remove unnecessary columns
         X_clean = self._remove_unnecessary_columns(X_clean)
-        
+
         # Apply all transformations using fitted parameters
         X_transformed = self._apply_transformations(X_clean, fit=False)
-        
+
         print("✅ Data transformation completed!")
         return X_transformed
-    
+
     def _remove_unnecessary_columns(self, df: pd.DataFrame) -> pd.DataFrame:
         """Remove unnecessary columns."""
         cols_to_remove = [
@@ -745,124 +751,149 @@ class MediumPreprocessingPipeline(BaseEstimator, TransformerMixin):
             'link_tags_canonical', 'meta_tags_description', 'author_url', 'author_twitter', 'domain',
             'meta_tags_robots'
         ]
-        
+
         return df.drop(columns=[col for col in cols_to_remove if col in df.columns])
-    
+
     def _apply_transformations(self, df: pd.DataFrame, fit: bool = False) -> pd.DataFrame:
         """Apply all transformations in sequence."""
         X = df.copy()
-        
+
         # Store target variable if it exists
         y = None
         if 'log1p_recommends' in X.columns:
             y = X['log1p_recommends']
             X = X.drop(columns='log1p_recommends')
-        
-        # 1. Extract temporal features
-        print(" - Extracting temporal features...")
-        temporal_extractor = TemporalFeatureExtractor(datetime_col=self.datetime_col)
-        X = temporal_extractor.fit_transform(X)
-        
-        # 2. Extract text features
-        print(" - Extracting text features...")
-        text_extractor = TextFeatureExtractor(text_columns=self.text_columns)
-        X = text_extractor.fit_transform(X)
-        
-        # Drop meta_tags_twitter:data1 after reading time extraction
-        if 'meta_tags_twitter:data1' in X.columns:  # type: ignore
-            X = X.drop(columns=['meta_tags_twitter:data1'])  # type: ignore
-        
-        # 3. Extract HTML features
-        print(" - Extracting HTML features...")
-        html_extractor = HTMLFeatureExtractor(html_columns=self.html_columns)
-        X = html_extractor.fit_transform(X)
-        
-        # 4. Strip HTML tags
-        print(" - Stripping HTML tags...")
-        html_stripper = HTMLTagStripper(
-            text_columns=self.html_columns, 
-            chunk_size=self.chunk_size, 
-            show_progress=self.show_progress
-        )
-        X = html_stripper.fit_transform(X)
-        
-        # 5. Extract NLP features
-        print(" - Extracting NLP features...")
-        nlp_extractor = NLPFeatureExtractor(text_columns=['content'])
-        X = nlp_extractor.fit_transform(X)
-        
-        # 6. Clean text
-        print(" - Cleaning text data...")
-        text_cleaner = TextCleaner(
-            text_columns=['content'], 
-            drop_punctuation=self.remove_punct, 
-            drop_stopwords=self.remove_stopwords
-        )
-        X = text_cleaner.fit_transform(X)
-        
-        # 7. Tokenize and lemmatize
-        print(" - Tokenizing and lemmatizing...")
-        tokenizer = TokenizerLemmatizer(text_columns=['content'])
-        X = tokenizer.fit_transform(X)
-        
-        # 8. TF-IDF vectorization
-        print(" - Vectorizing text data with TF-IDF...")
-        if fit:
-            self.tfidf_vectorizer = TfidfVectorizer(min_df=self.tf_idf_min_ratio)
-            tfidf_matrix = self.tfidf_vectorizer.fit_transform(X['content_lemmatized'])
-            self.tfidf_feature_names_ = self.tfidf_vectorizer.get_feature_names_out()
-        else:
-            if self.tfidf_vectorizer is None:
-                raise ValueError("Pipeline must be fitted before transform")
-            tfidf_matrix = self.tfidf_vectorizer.transform(X['content_lemmatized'])
-        
-        # Create TF-IDF DataFrame
-        tfidf_df = pd.DataFrame(
-            tfidf_matrix.toarray(),  # type: ignore
-            columns=self.tfidf_feature_names_,
-            index=X.index  # type: ignore
-        )
-        
-        # Drop text columns that are no longer needed
-        X = X.drop(columns=['content', 'title', 'content_lemmatized'])  # type: ignore
-        
-        # 9. Encode categorical columns
-        print(" - Encoding categorical columns...")
-        if 'image_url' in X.columns:
-            X['image_url'] = encode_zero_ones(X['image_url'])
-        if 'link_tags_amphtml' in X.columns:
-            X['link_tags_amphtml'] = encode_zero_ones(X['link_tags_amphtml'])
-        if 'meta_tags_referrer' in X.columns:
-            X['meta_tags_referrer'] = encode_referrer(X['meta_tags_referrer'])
-        
-        # 10. Scale numerical columns
-        print(" - Scaling numerical columns...")
+
         numerical_cols = [
-            'publication_year', 'publication_month', 'publication_day', 'publication_dayofweek', 
+            'publication_year', 'publication_month', 'publication_day', 'publication_dayofweek',
             'publication_hour', 'days_since_publication', 'title_length', 'title_word_count',
             'title_unique_word_count', 'reading_time', 'content_length', 'content_word_count',
-            'content_unique_word_count', 'content_has_numbers', 'content_is_question', 
+            'content_unique_word_count', 'content_has_numbers', 'content_is_question',
             'content_num_links', 'content_num_images', 'content_num_lists', 'content_num_paragraphs',
-            'content_num_h1', 'content_num_h2', 'content_num_h3', 'content_readability_score', 
+            'content_num_h1', 'content_num_h2', 'content_num_h3', 'content_readability_score',
             'content_grade_level'
         ]
-        
-        # Filter columns that actually exist
-        numerical_cols = [col for col in numerical_cols if col in X.columns]
-        
-        if fit:
-            self.std_scaler = StandardScaler()
-            X[numerical_cols] = self.std_scaler.fit_transform(X[numerical_cols])
+
+        if self.content_only:
+            print("Skipping metadata columns analysis. ")
+            for col in numerical_cols + ['_timestamp','image_url','published_$date','link_tags_amphtml','meta_tags_referrer','meta_tags_twitter:data1']:
+                if col in X.columns:
+                    X = X.drop(columns = col)
         else:
-            if self.std_scaler is None:
-                raise ValueError("Pipeline must be fitted before transform")
-            X[numerical_cols] = self.std_scaler.transform(X[numerical_cols])
-        
-        # 11. Concatenate all features
-        X_final = pd.concat([X, tfidf_df], axis=1)
-        
+            # 1. Extract temporal features
+            print(" - Extracting temporal features...")
+            temporal_extractor = TemporalFeatureExtractor(datetime_col=self.datetime_col)
+            X = temporal_extractor.fit_transform(X)
+
+            # 2. Extract text features
+            print(" - Extracting text features...")
+            text_extractor = TextFeatureExtractor(text_columns=self.text_columns)
+            X = text_extractor.fit_transform(X)
+
+            # Drop meta_tags_twitter:data1 after reading time extraction
+            if 'meta_tags_twitter:data1' in X.columns:  # type: ignore
+                X = X.drop(columns=['meta_tags_twitter:data1'])  # type: ignore
+
+            # 3. Extract HTML features
+            print(" - Extracting HTML features...")
+            html_extractor = HTMLFeatureExtractor(html_columns=self.html_columns)
+            X = html_extractor.fit_transform(X)
+
+            # 4. Strip HTML tags
+            print(" - Stripping HTML tags...")
+            html_stripper = HTMLTagStripper(
+                text_columns=self.html_columns,
+                chunk_size=self.chunk_size,
+                show_progress=self.show_progress
+            )
+            X = html_stripper.fit_transform(X)
+
+            # 5. Extract NLP features
+            print(" - Extracting NLP features...")
+            nlp_extractor = NLPFeatureExtractor(text_columns=['content'])
+            X = nlp_extractor.fit_transform(X)
+
+            # 9. Encode categorical columns
+            print(" - Encoding categorical columns...")
+            if 'image_url' in X.columns: # type: ignore
+                X['image_url'] = encode_zero_ones(X['image_url']) # type: ignore
+            if 'link_tags_amphtml' in X.columns: # type: ignore
+                X['link_tags_amphtml'] = encode_zero_ones(X['link_tags_amphtml']) # type: ignore
+            if 'meta_tags_referrer' in X.columns: # type: ignore
+                X['meta_tags_referrer'] = encode_referrer(X['meta_tags_referrer']) # type: ignore
+
+            # 10. Scale numerical columns
+            print(" - Scaling numerical columns...")
+            if self.model_is_tree:
+                print('Skipping scaling because model is tree-based.')
+            else:
+                # Filter columns that actually exist
+                numerical_cols = [col for col in numerical_cols if col in X.columns] # type: ignore
+
+                if fit:
+                    self.std_scaler = StandardScaler()
+                    X[numerical_cols] = self.std_scaler.fit_transform(X[numerical_cols])
+                else:
+                    if self.std_scaler is None:
+                        raise ValueError("Pipeline must be fitted before transform")
+                    X[numerical_cols] = self.std_scaler.transform(X[numerical_cols])
+
+
+        if self.metadata_only:
+            print('Skipping content tokenization and lemmatization.')
+            X_final = X.drop(columns=['content', 'title']) # type: ignore
+        else:
+            # 6. Clean text
+            print(" - Cleaning text data...")
+            text_cleaner = TextCleaner(
+                text_columns=['content'],
+                drop_punctuation=self.remove_punct,
+                drop_stopwords=self.remove_stopwords
+            )
+            X = text_cleaner.fit_transform(X)
+
+            # 4. Strip HTML tags
+            print(" - Stripping HTML tags...")
+            html_stripper = HTMLTagStripper(
+                text_columns=self.html_columns,
+                chunk_size=self.chunk_size,
+                show_progress=self.show_progress
+            )
+            X = html_stripper.fit_transform(X)
+
+            # 7. Tokenize and lemmatize
+
+            print(" - Tokenizing and lemmatizing...")
+            tokenizer = TokenizerLemmatizer(text_columns=['content'])
+            X = tokenizer.fit_transform(X)
+
+            # 8. TF-IDF vectorization
+
+            print(" - Vectorizing text data with TF-IDF...")
+            if fit:
+                self.tfidf_vectorizer = TfidfVectorizer(min_df=self.tf_idf_min_ratio)
+                tfidf_matrix = self.tfidf_vectorizer.fit_transform(X['content_lemmatized'])
+                self.tfidf_feature_names_ = self.tfidf_vectorizer.get_feature_names_out()
+            else:
+                if self.tfidf_vectorizer is None:
+                    raise ValueError("Pipeline must be fitted before transform")
+                tfidf_matrix = self.tfidf_vectorizer.transform(X['content_lemmatized'])
+
+            # Create TF-IDF DataFrame
+            tfidf_df = pd.DataFrame(
+                tfidf_matrix.toarray(),  # type: ignore
+                columns=self.tfidf_feature_names_,
+                index=X.index  # type: ignore
+            )
+
+            # Drop text columns that are no longer needed
+            X = X.drop(columns=['content', 'title', 'content_lemmatized'])  # type: ignore
+
+            # 11. Concatenate all features
+            X_final = pd.concat([X, tfidf_df], axis=1)
+
         # Add back target variable if it exists
         if y is not None:
             X_final = pd.concat([X_final, y], axis=1)
-        
+
         return X_final
