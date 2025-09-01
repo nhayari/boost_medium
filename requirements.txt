@@ -22,3 +22,5 @@ lightgbm
 catboost
 # pytz
 uvicorn
+
+xgboost

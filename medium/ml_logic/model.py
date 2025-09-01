@@ -1,7 +1,11 @@
 import numpy as np
+import pandas as pd
 import time
 from scipy import stats
 from sklearn.metrics import mean_absolute_error
+from sklearn.pipeline import Pipeline
+from sklearn.base import BaseEstimator, RegressorMixin
+from typing import Optional
 
 # from typing import Tuple
 # from tensorflow import keras
@@ -13,6 +17,7 @@ from sklearn.ensemble import RandomForestRegressor, ExtraTreesRegressor, Gradien
 # from sklearn.svm import SVR
 from lightgbm import LGBMRegressor
 from xgboost import XGBRegressor
+from medium.ml_logic.preprocessor import MediumPreprocessingPipeline
 
 
 implemented_model = {
@@ -150,7 +155,8 @@ def evaluate_model (model, X=None, y=None):
     for metric in implemented_model[model.__class__.__name__]['metrics']:
         if metric == 'mae':
             y_pred = model.predict(X)
-            metrics[metric] = mean_absolute_error(y, y_pred)
+            if y is not None:
+                metrics[metric] = mean_absolute_error(y, y_pred)
         else:
             print("⚠️ Skipping  !! metric must be added in implemented_model.")
             print("🏁 evaluate_model() end \n")
@@ -181,6 +187,198 @@ def getExtraTreesRegressor(model_dict):
     return model
 
 
+# def getXGBRegressor(model_dict):
+#     """
+#     Initialize XGBRegressor with parameters
+#     Args:
+#         model_dict (dict): parameters dictionary
+
+#     Returns:
+#         XGBRegressor: Initialized XGBoost model instance
+#     """
+#     if not XGBOOST_AVAILABLE:
+#         raise ImportError("XGBoost is not installed. Install with: pip install xgboost")
+
+#     model = xgb.XGBRegressor(
+#         n_estimators=model_dict['n_estimators'],
+#         max_depth=model_dict['max_depth'],
+#         learning_rate=model_dict['learning_rate'],
+#         subsample=model_dict['subsample'],
+#         colsample_bytree=model_dict['colsample_bytree'],
+#         random_state=model_dict['random_state'],
+#         n_jobs=model_dict['n_jobs'],
+#         objective=model_dict['objective'],
+#         eval_metric=model_dict['eval_metric']
+#     )
+
+#     return model
+
+
+def create_medium_pipeline(
+    model_name: str = 'LinearRegression',
+    datetime_col: str = 'published_$date',
+    text_columns: Optional[list] = None,
+    html_columns: Optional[list] = None,
+    chunk_size: int = 1000,
+    remove_punct: bool = True,
+    remove_stopwords: bool = True,
+    tf_idf_min_ratio: float = 0.02,
+    show_progress: bool = True
+) -> Pipeline:
+    """
+    Create a complete pipeline with preprocessing and modeling.
+
+    Args:
+        model_name (str): Name of the model to use
+        Other args: Parameters for preprocessing pipeline
+
+    Returns:
+        Pipeline: Complete sklearn pipeline with preprocessing and model
+    """
+    print("🎬 Creating Medium pipeline...")
+
+    # Create preprocessing pipeline
+    preprocessor = MediumPreprocessingPipeline(
+        datetime_col=datetime_col,
+        text_columns=text_columns,
+        html_columns=html_columns,
+        chunk_size=chunk_size,
+        remove_punct=remove_punct,
+        remove_stopwords=remove_stopwords,
+        tf_idf_min_ratio=tf_idf_min_ratio,
+        show_progress=show_progress
+    )
+
+    # Initialize model
+    model = initialize_model(model_name)
+
+    # Create complete pipeline
+    pipeline = Pipeline([
+        ('preprocessor', preprocessor),
+        ('model', model)
+    ])
+
+    print("✅ Medium pipeline created successfully!")
+    return pipeline
+
+
+def train_pipeline(pipeline: Pipeline, X: pd.DataFrame, y: Optional[pd.Series] = None):
+    """
+    Train the complete pipeline.
+
+    Args:
+        pipeline (Pipeline): The pipeline to train
+        X (pd.DataFrame): Input data
+        y (pd.Series, optional): Target variable. If None, assumes it's in X['log1p_recommends']
+
+    Returns:
+        Pipeline: Trained pipeline
+    """
+    print("🎬 Training pipeline...")
+
+    # If target variable is in the dataframe, let the preprocessor handle it
+    # The preprocessor will keep target and features aligned during cleaning
+    if y is None and 'log1p_recommends' in X.columns:
+        # The pipeline will handle the full dataframe including target variable
+        # The preprocessor is designed to keep target and features aligned
+
+        # First, get preprocessed data with target variable
+        preprocessed_data = pipeline.named_steps['preprocessor'].fit_transform(X)
+
+        # Extract aligned target and features
+        if 'log1p_recommends' in preprocessed_data.columns:
+            y_aligned = preprocessed_data['log1p_recommends']
+            X_aligned = preprocessed_data.drop(columns=['log1p_recommends'])
+        else:
+            raise ValueError("Target variable 'log1p_recommends' not found in preprocessed data")
+
+        # Train the model with aligned data
+        pipeline.named_steps['model'].fit(X_aligned, y_aligned)
+
+    else:
+        # If target is provided separately, use traditional approach
+        X_train = X.drop(columns=['log1p_recommends'], errors='ignore')
+        if y is None:
+            raise ValueError("Target variable 'y' must be provided or 'log1p_recommends' column must exist in X")
+        pipeline.fit(X_train, y)
+
+    print("✅ Pipeline training completed!")
+    return pipeline
+
+
+def predict_pipeline(pipeline: Pipeline, X: pd.DataFrame):
+    """
+    Make predictions using the trained pipeline.
+
+    Args:
+        pipeline (Pipeline): Trained pipeline
+        X (pd.DataFrame): Input data
+
+    Returns:
+        np.ndarray: Predictions
+    """
+    print("🎬 Making predictions with pipeline...")
+
+    # Remove target variable if it exists
+    X_pred = X.drop(columns=['log1p_recommends'], errors='ignore')
+
+    # Make predictions
+    predictions = pipeline.predict(X_pred)
+
+    print("✅ Predictions completed!")
+    return predictions
+
+
+def evaluate_pipeline(pipeline: Pipeline, X: pd.DataFrame, y: Optional[pd.Series] = None) -> dict:
+    """
+    Evaluate the trained pipeline.
+
+    Args:
+        pipeline (Pipeline): Trained pipeline
+        X (pd.DataFrame): Input data
+        y (pd.Series, optional): True target values. If None, assumes it's in X['log1p_recommends']
+
+    Returns:
+        dict: Evaluation metrics
+    """
+    print("🎬 Evaluating pipeline...")
+
+    # Handle alignment issue similar to training
+    if y is None and 'log1p_recommends' in X.columns:
+        # Preprocess the data to get aligned target and features
+        preprocessed_data = pipeline.named_steps['preprocessor'].transform(X)
+
+        # Extract aligned target and features
+        if 'log1p_recommends' in preprocessed_data.columns:
+            y_true = preprocessed_data['log1p_recommends']
+            X_eval = preprocessed_data.drop(columns=['log1p_recommends'])
+        else:
+            raise ValueError("Target variable 'log1p_recommends' not found in preprocessed data")
+
+        # Make predictions with the model directly (data already preprocessed)
+        y_pred = pipeline.named_steps['model'].predict(X_eval)
+    else:
+        # If target is provided separately, use traditional approach
+        X_eval = X.drop(columns=['log1p_recommends'], errors='ignore')
+        y_true = y
+
+        if y_true is None:
+            raise ValueError("Target variable 'y' must be provided or 'log1p_recommends' column must exist in X")
+
+        # Make predictions using full pipeline
+        y_pred = pipeline.predict(X_eval)
+
+    # Calculate metrics
+    metrics = {}
+    model_name = pipeline.named_steps['model'].__class__.__name__
+
+    if model_name in implemented_model:
+        for metric in implemented_model[model_name]['metrics']:
+            if metric == 'mae':
+                metrics[metric] = mean_absolute_error(y_true, y_pred)
+
+    print("✅ Pipeline evaluation completed!")
+    return metrics
 def getRidge(model_dict):
     """
     Initialise model Ridge with params
