@@ -19,6 +19,7 @@ help:
 requirments:
 	@echo "------ 🔄 Réinstallation du package..."
 	pip install -r requirements.txt
+	python -m nltk.downloader all
 	@echo "------ ✅ Package réinstallé."
 
 reinstall_package:
