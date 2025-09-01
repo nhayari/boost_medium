@@ -11,9 +11,9 @@ jsonlines
 nltk
 textblob
 textstat
-
 tensorflow
 streamlit
+# API
 # fastapi==0.108.0
 fastapi
 xgboost
