@@ -19,3 +19,5 @@ fastapi==0.108.0
 
 # pytz
 uvicorn
+
+xgboost
