@@ -24,7 +24,6 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-
 # Vérifier la connexion
 def check_connection():
     return time.time() % 10 > 5  # connecté si le modulo > 5
