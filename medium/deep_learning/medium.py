@@ -1,4 +1,6 @@
 from medium.deep_learning.data import DeepLearningData
+from medium.params import *
+
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.models import Sequential
@@ -15,7 +17,6 @@ class Medium:
         """
         self.model = model
         self.is_fitted = model is not None
-
 
     def load_data(self, test_size=0.2, random_state=42, force_reload: bool = False):
         """
@@ -34,16 +35,16 @@ class Medium:
         Raises:
             Any exceptions raised by the DeepLearningData methods.
         """
-        self.data_loader = DeepLearningData(test_size=test_size, random_state=random_state, force_reload=force_reload)
-        self.data = self.data_loader.load_data(force_reload=self.force_reload)
+        self.data_loader = DeepLearningData()
+        self.data = self.data_loader.load_data(force_reload=force_reload)
         self.preprocessed_data = self.data_loader.load_preprocess_data(
-            self.data, force_reload=self.force_reload
+            self.data, force_reload=force_reload
         )
         self.X_train, self.X_val, self.y_train, self.y_val = self.data_loader.load_train_val_split_data(
             self.preprocessed_data,
-            test_size=self.test_size,
-            random_state=self.random_state,
-            force_reload=self.force_reload
+            test_size=test_size,
+            random_state=random_state,
+            force_reload=force_reload
         )
         return self
 
@@ -75,42 +76,39 @@ class Medium:
             self.X_train, self.X_val, self.y_train, self.y_val = self.get_data_loader().load_train_val_split_data(self.get_preprocessed_data())
             return self.X_train, self.X_val, self.y_train, self.y_val
 
-    def tokenize(self):
+    def tokenize(self, X):
         """
         Tokenize the text data.
         """
-        if not hasattr(self, 'X_train') or not hasattr(self, 'X_val'):
-            raise ValueError("Training and validation data not found. Please load the data first.")
-
         print("🎬 Tokenization started...\n")
         # Initialize tokenizer
-        tokenizer = Tokenizer(oov_token='<OOV>')
-
-        # Fit tokenizer on training data
-        tokenizer.fit_on_texts(self.X_train['full_content'])
+        if hasattr(self, 'tokenizer'):
+            tokenizer = self.tokenizer
+        else:
+            tokenizer = Tokenizer(oov_token='<OOV>')
+            # Fit tokenizer on training data
+            tokenizer.fit_on_texts(X)
 
         # Convert texts to sequences
-        self.X_train_seq = tokenizer.texts_to_sequences(self.X_train['full_content'])
-        self.X_val_seq = tokenizer.texts_to_sequences(self.X_val['full_content'])
+        X_seq = tokenizer.texts_to_sequences(X)
 
         print("✅ Tokenization completed")
 
         # Save tokenizer for future use
         self.tokenizer = tokenizer
 
-        return self
+        return X_seq
 
-    def pad_sequences(self, max_length=500, padding_type='post', truncating_type='post'):
+    def pad_sequences(self, X, max_length=500, padding_type='post', truncating_type='post'):
         """
         Pad the sequences to the same length.
         """
-        if not hasattr(self, 'X_train_seq') or not hasattr(self, 'X_val_seq'):
-            raise ValueError("Training and validation sequences not found. Please tokenize the data first.")
+        print("🎬 Padding sequences started...\n")
+        X_pad = pad_sequences(X, maxlen=max_length, padding=padding_type, truncating=truncating_type)
 
-        self.X_train_pad = pad_sequences(self.X_train_seq, maxlen=max_length, padding=padding_type, truncating=truncating_type)
-        self.X_val_pad = pad_sequences(self.X_val_seq, maxlen=max_length, padding=padding_type, truncating=truncating_type)
+        print("✅ Padding sequences completed")
 
-        return self
+        return X_pad
 
     def get_vocab_size(self):
         """
@@ -150,7 +148,7 @@ class Medium:
         ])
 
         model.compile(optimizer='adam', loss='mean_squared_error', metrics=['mae'])
-
+        model.name = "LSTM"
         self.model = model
         self.is_fitted = False
 
@@ -175,7 +173,7 @@ class Medium:
         ])
 
         model.compile(optimizer='adam', loss='mean_squared_error', metrics=['mae'])
-
+        model.name = "CNN"
         self.model = model
         self.is_fitted = False
 
@@ -250,3 +248,44 @@ class Medium:
             return self.model.summary()
         else:
             raise ValueError("Model is not built yet.")
+
+    def get_model_name(self):
+        """
+        Get the model name.
+        """
+        if self.model:
+            return self.model.name
+        else:
+            raise ValueError("Model is not built yet.")
+
+    def load_test_data(self, force_reload: bool = False):
+        """
+        Get the test data.
+        """
+        if self.data_loader:
+            print("Loading test data...")
+            df_test = self.data_loader.load_test_data(force_reload=force_reload)
+            print(f"Test data loaded with {len(df_test)} records.")
+            print("Preprocessing test data...")
+            df_test = self.data_loader.preprocess_data(df_test)
+            print("Setting test features and targets...")
+            self.X_test = df_test[['full_content']]
+            self.y_test = df_test['log_recommends']
+            print("Test data is ready.")
+        else:
+            raise ValueError("Data loader is not initialized.")
+
+    def set_attr(self, name, value):
+        super().__setattr__(name, value)
+
+    def tokenize_and_pad(self, data, attr_prefix: str, pad_args: dict = {}):
+        """
+        Tokenize and pad the sequences for the given data.
+
+        """
+        if attr_prefix not in ['X_train', 'X_val', 'X_test', 'X_pred']:
+            raise ValueError("attr_prefix must be one of 'X_train', 'X_val', 'X_test', or 'X_pred'.")
+        seq = self.tokenize(data['full_content'])
+        self.set_attr(f'{attr_prefix}_seq', seq)
+        pad = self.pad_sequences(seq, **pad_args)
+        self.set_attr(f'{attr_prefix}_pad', pad)

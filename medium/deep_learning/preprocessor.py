@@ -3,6 +3,7 @@ from sklearn.base import BaseEstimator, TransformerMixin
 from typing import List, Optional
 
 import pandas as pd
+pd.options.mode.copy_on_write = True
 import re
 
 HTML_TAG_PATTERN = re.compile(r'<[^>]+>')
