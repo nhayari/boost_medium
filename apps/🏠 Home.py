@@ -9,18 +9,25 @@ import requests
 from medium.api.fast import predict
 from medium.ml_logic.model import *
 
+
 st.set_page_config(page_title="Home Page", page_icon="🏠")
 
 
-st.markdown("""
-    # Boost Medium Articles App
-""")
+st.title('Boost Medium Articles App')
+
+
+CSS = """
+.stApp {
+    background-image: url('medium.png');
+    background-size: cover;
+}
+"""
 
 # Vérifier la connexion
 def check_connection():
     return time.time() % 10 > 5  # connecté si le modulo > 5
 
-st.title("Indicateur de connexion")
+st.header("Indicateur de connexion")
 
 # Bouton cliquable
 if st.button("🔄 Vérifier la connexion"):
