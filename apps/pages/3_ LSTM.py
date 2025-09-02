@@ -39,6 +39,6 @@ dict_params = {
 prediction = requests.post(url=f"{url}/predict", json=dict_params)
 
 
-#Prediction
-if st.button('Prediction'):
-    st.write(prediction)
+if st.button('Recommandation'):
+    st.write('The prediction is',int(round(prediction.json()['recommandations'])))
+    st.write('Numbers of recommandations:', int(round(np.expm1(prediction.json()['recommandations']))))
