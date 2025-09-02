@@ -61,13 +61,13 @@ data:
 
 preprocess:
 	@echo "------ 🔄 Start preprocess ..."
-	python -c "from medium.interface.main import preprocess; preprocess()"
+	python -c "from medium.interface.main import preprocess; preprocess(remove_punct=$(remove_punct), remove_stopwords=$(remove_stopwords), content_only=$(content_only), metadata_only=$(metadata_only), model_is_tree=$(model_is_tree))"
 	@echo "------ ✅ End preprocess."
 
 train:
 	@echo "------ 🔄 Start train ..."
 # 	python -c 'from medium.interface.main import train; train()'
-	python -c "from medium.interface.main import train; train(model_name='$(model_name)')"
+	python -c "from medium.interface.main import train; train(model_name='$(model_name)', remove_punct=$(remove_punct), remove_stopwords=$(remove_stopwords), content_only=$(content_only), metadata_only=$(metadata_only), model_is_tree=$(model_is_tree))"
 	@echo "------ ✅ End train."
 
 pred:
@@ -77,12 +77,12 @@ pred:
 	@echo "------ ✅ End pred."
 
 evaluate:
-	python -c "from medium.interface.main import evaluate; evaluate(model_name='$(model_name)')"
+	python -c "from medium.interface.main import evaluate; evaluate(model_name='$(model_name)', remove_punct=$(remove_punct), remove_stopwords=$(remove_stopwords), content_only=$(content_only), metadata_only=$(metadata_only), model_is_tree=$(model_is_tree))"
 
 run_all:
 	@echo "------ 🔄 run all ..."
 # 	python -c 'from medium.interface.main import run_all; run_all()'
-		python -c "from medium.interface.main import run_all; run_all(model_name='$(model_name)')"
+		python -c "from medium.interface.main import run_all; run_all(model_name='$(model_name)', remove_punct=$(remove_punct), remove_stopwords=$(remove_stopwords), content_only=$(content_only), metadata_only=$(metadata_only), model_is_tree=$(model_is_tree))"
 	@echo "------ ✅ End run all."
 
 # workflow:

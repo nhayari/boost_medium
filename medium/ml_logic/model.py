@@ -46,12 +46,20 @@ implemented_model = {
         'metrics' : ['mae'],
         'alpha':1.0
     },
-    'XGBRegressor' : {
+    'XGBRegressor': {
+        'n_estimators': 500,
+        'learning_rate': 0.05,
+        'max_depth': 6,
+        'min_child_weight': 1,
+        'subsample': 0.8,
+        'colsample_bytree': 0.8,
+        'reg_alpha': 0,
+        'reg_lambda': 1,
+        'random_state': 42,
+        'n_jobs': -1,
+        'eval_metric': 'mae',
         'metrics' : ['mae'],
-       'n_estimators': 200,
-       'learning_rate': 0.05,
-       'eval_metric': 'mae',
-       'objective' :'reg:squarederror'
+        'objective': 'reg:absoluteerror'
     },
     'LGBMRegressor': {
         'metrics' : ['mae'],
@@ -165,11 +173,6 @@ def evaluate_model (model, X=None, y=None):
 
     return metrics
 
-
-
-
-
-
 # model_dict= implemented_model[model_name]
 def getExtraTreesRegressor(model_dict):
     """
@@ -187,42 +190,18 @@ def getExtraTreesRegressor(model_dict):
     return model
 
 
-# def getXGBRegressor(model_dict):
-#     """
-#     Initialize XGBRegressor with parameters
-#     Args:
-#         model_dict (dict): parameters dictionary
-
-#     Returns:
-#         XGBRegressor: Initialized XGBoost model instance
-#     """
-#     if not XGBOOST_AVAILABLE:
-#         raise ImportError("XGBoost is not installed. Install with: pip install xgboost")
-
-#     model = xgb.XGBRegressor(
-#         n_estimators=model_dict['n_estimators'],
-#         max_depth=model_dict['max_depth'],
-#         learning_rate=model_dict['learning_rate'],
-#         subsample=model_dict['subsample'],
-#         colsample_bytree=model_dict['colsample_bytree'],
-#         random_state=model_dict['random_state'],
-#         n_jobs=model_dict['n_jobs'],
-#         objective=model_dict['objective'],
-#         eval_metric=model_dict['eval_metric']
-#     )
-
-#     return model
-
-
 def create_medium_pipeline(
     model_name: str = 'LinearRegression',
     datetime_col: str = 'published_$date',
     text_columns: Optional[list] = None,
     html_columns: Optional[list] = None,
     chunk_size: int = 1000,
-    remove_punct: bool = True,
-    remove_stopwords: bool = True,
+    remove_punct: bool = False,
+    remove_stopwords: bool = False,
     tf_idf_min_ratio: float = 0.02,
+    content_only: bool = False,
+    metadata_only: bool = False,
+    model_is_tree: bool = False,
     show_progress: bool = True
 ) -> Pipeline:
     """
@@ -237,6 +216,16 @@ def create_medium_pipeline(
     """
     print("🎬 Creating Medium pipeline...")
 
+    if content_only and metadata_only:
+        print('Not possible to do both metadata-only and content-only.')
+        print('Defaulting to content only.')
+        metadata_only = False
+
+    tree_models = ['RandomForestRegressor', 'ExtraTreesRegressor', 'GradientBoostingRegressor']
+
+    if model_name in tree_models:
+        model_is_tree = True
+
     # Create preprocessing pipeline
     preprocessor = MediumPreprocessingPipeline(
         datetime_col=datetime_col,
@@ -246,6 +235,9 @@ def create_medium_pipeline(
         remove_punct=remove_punct,
         remove_stopwords=remove_stopwords,
         tf_idf_min_ratio=tf_idf_min_ratio,
+        content_only=content_only,
+        metadata_only=metadata_only,
+        model_is_tree=model_is_tree,
         show_progress=show_progress
     )
 
@@ -262,7 +254,7 @@ def create_medium_pipeline(
     return pipeline
 
 
-def train_pipeline(pipeline: Pipeline, X: pd.DataFrame, y: Optional[pd.Series] = None):
+def train_pipeline(pipeline: Pipeline, X: pd.DataFrame, y: Optional[pd.Series] = None, is_preprocessed: bool = False):
     """
     Train the complete pipeline.
 
@@ -283,7 +275,10 @@ def train_pipeline(pipeline: Pipeline, X: pd.DataFrame, y: Optional[pd.Series] =
         # The preprocessor is designed to keep target and features aligned
 
         # First, get preprocessed data with target variable
-        preprocessed_data = pipeline.named_steps['preprocessor'].fit_transform(X)
+        if is_preprocessed:
+            preprocessed_data = X.copy()
+        else:
+            preprocessed_data = pipeline.named_steps['preprocessor'].fit_transform(X)
 
         # Extract aligned target and features
         if 'log1p_recommends' in preprocessed_data.columns:
@@ -329,7 +324,7 @@ def predict_pipeline(pipeline: Pipeline, X: pd.DataFrame):
     return predictions
 
 
-def evaluate_pipeline(pipeline: Pipeline, X: pd.DataFrame, y: Optional[pd.Series] = None) -> dict:
+def evaluate_pipeline(pipeline: Pipeline, X: pd.DataFrame, y: Optional[pd.Series] = None, is_preprocessed: bool = False) -> dict:
     """
     Evaluate the trained pipeline.
 
@@ -346,7 +341,10 @@ def evaluate_pipeline(pipeline: Pipeline, X: pd.DataFrame, y: Optional[pd.Series
     # Handle alignment issue similar to training
     if y is None and 'log1p_recommends' in X.columns:
         # Preprocess the data to get aligned target and features
-        preprocessed_data = pipeline.named_steps['preprocessor'].transform(X)
+        if is_preprocessed:
+            preprocessed_data = X.copy()
+        else:
+            preprocessed_data = pipeline.named_steps['preprocessor'].transform(X)
 
         # Extract aligned target and features
         if 'log1p_recommends' in preprocessed_data.columns:
@@ -379,6 +377,7 @@ def evaluate_pipeline(pipeline: Pipeline, X: pd.DataFrame, y: Optional[pd.Series
 
     print("✅ Pipeline evaluation completed!")
     return metrics
+
 def getRidge(model_dict):
     """
     Initialise model Ridge with params
@@ -402,7 +401,10 @@ def getXGBRegressor(model_dict):
     model = XGBRegressor(n_estimators=model_dict['n_estimators'],
                          learning_rate=model_dict['learning_rate'],
                          eval_metric=model_dict['eval_metric'],
-                         objective=model_dict['objective']
+                         objective=model_dict['objective'],
+                         n_jobs = model_dict['n_jobs'],
+                         subsample=model_dict['subsample'],
+                         colsample_bytree= model_dict['colsample_bytree']
                          )
     return model
 
