@@ -29,8 +29,8 @@ url = 'http://0.0.0.0:8000' # 'https://boost-medium-docker-759226870731.europe-w
 
 
 dict_params = {
-    'model_name': 'Ridge',
-    'title': title
+    'model_name': 'Ridge_pipeline',
+    'title': df[df['title'] == title].to_json()
 }
 
 
