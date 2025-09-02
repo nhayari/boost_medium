@@ -229,8 +229,9 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
         print(f" - Flattened dictionary columns, total columns now: {df.shape[1]}")
 
         # 2. Remove constant columns
-        df = remove_constant_columns(df, exclude_cols=['content', 'tags'])
-        print(f" - Removed constant columns, remaining columns: {df.shape[1]}")
+        if len(df) > 1:
+            df = remove_constant_columns(df, exclude_cols=['content', 'tags'])
+            print(f" - Removed constant columns, remaining columns: {df.shape[1]}")
 
         # 3. Remove articles where their title contains 20% of non-ASCII characters
         if 'title' in df.columns:
@@ -256,11 +257,11 @@ def create_dataframe_to_predict(text: str = "", title: str = ""):
     import pandas as pd
     from datetime import datetime
     import time
-    
+
     # Create a comprehensive DataFrame with all expected columns
     current_time = datetime.now()
     timestamp = int(time.time())
-    
+
     df = pd.DataFrame({
         'content': [text],
         'title': [title],
@@ -279,5 +280,5 @@ def create_dataframe_to_predict(text: str = "", title: str = ""):
         '_spider': ['prediction'],
         'url': ['https://medium.com/prediction']
     })
-    
+
     return df
