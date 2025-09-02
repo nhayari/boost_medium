@@ -35,7 +35,7 @@ async def predict(request: Request):
     print(type(request_data['title']))
     model = load_model(model_name=request_data['model_name'])
     df_title = pd.DataFrame(request_data['title'])
-    X_proc = load_preprocessor('medium_pipeline_preprocessor')
+    X_proc = load_preprocessor('pipeline_preprocessor_punct_removed_stopwords_removed_data_scaled')
     X_processed = X_proc.fit_transform(df_title)
     y_pred = model.predict(X_processed)
     return {'recommandations': float(y_pred)}
