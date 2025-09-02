@@ -1,20 +1,14 @@
 import numpy as np
 import pandas as pd
-
-# from pathlib import Path
-# from colorama import Fore, Style
-# from dateutil.parser import parse
-
+from pathlib import Path
 from medium.params import *
-from medium.ml_logic.data import clean_data, load_json_from_files,create_dataframe_to_predict
+from medium.ml_logic.data import clean_data, load_json_from_files, create_dataframe_to_predict
 from medium.ml_logic.registry import load_model, save_model, save_results, save_preprocessor, load_preprocessor
-
 from medium.ml_logic.model import (
-    initialize_model, compile_model, train_model, evaluate_model, implemented_model,
-    create_medium_pipeline, train_pipeline, predict_pipeline, evaluate_pipeline
+    initialize_model, compile_model, train_model, evaluate_model, implemented_model, train_pipeline, predict_pipeline, evaluate_pipeline
 )
 from medium.ml_logic.preprocessor import (
-    preprocess_features, preprocess_pred, MediumPreprocessingPipeline
+    preprocess_pred, MediumPreprocessingPipeline
 )
 from sklearn.pipeline import Pipeline
 from sklearn.metrics import mean_absolute_error
@@ -23,9 +17,6 @@ import pickle
 
 
 def save_model_with_custom_name(model, custom_name: str) -> bool:
-    """
-    Save model with a custom name instead of using model.__class__.__name__
-    """
     try:
         print(f"🎬 save_model_with_custom_name starting ({custom_name})................\n")
         timestamp = time.strftime("%Y%m%d-%H%M%S")
@@ -38,21 +29,27 @@ def save_model_with_custom_name(model, custom_name: str) -> bool:
         print(f"Error saving model with custom name: {e}")
         return False
 
-def preprocess(chunk_size: int = 1000, remove_punct: bool = False,
-               remove_stopwords: bool = False, content_only: bool = False,
-               metadata_only: bool = False, model_is_tree: bool = False) -> None:
+def preprocess_and_split(split_ratio: float = 0.2, chunk_size: int = 1000,
+                         remove_punct: bool = False, remove_stopwords: bool = False,
+                         content_only: bool = False, metadata_only: bool = False,
+                         model_is_tree: bool = False) -> tuple:
     """
-    - Charge les données brutes depuis les fichiers JSON et CSV
-    - Nettoie et préprocesse les données avec le nouveau pipeline transformer
-    - Stocke les données traitées et le preprocesseur
+    Load data, split FIRST, then preprocess to avoid data leakage.
+    Returns preprocessed train and validation data along with fitted preprocessor.
     """
-    print("🎬 main preprocess starting (transformer approach)................\n")
+    print("🎬 preprocess_and_split starting (leak-free approach)................\n")
     print(locals())
 
-    # Charger les données JSON
+    # Load raw data
     data = load_json_from_files(X_filepath=DATA_TRAIN, y_filepath=DATA_LOG_RECOMMEND, num_lines=DATA_SIZE)
 
-    # Créer et entraîner le pipeline de préprocessing
+    # CRITICAL: Split BEFORE any preprocessing
+    train_length = int(len(data) * (1 - split_ratio))
+    data_train_raw, data_val_raw = data[:train_length].copy(), data[train_length:].copy()
+
+    print(f"📊 Data split: {len(data_train_raw)} train, {len(data_val_raw)} validation")
+
+    # Create preprocessing pipeline
     preprocessor = MediumPreprocessingPipeline(
         chunk_size=chunk_size,
         remove_punct=remove_punct,
@@ -63,128 +60,145 @@ def preprocess(chunk_size: int = 1000, remove_punct: bool = False,
         show_progress=True
     )
 
-    # Fit et transform les données
-    df_processed = preprocessor.fit_transform(data)
+    # FIT preprocessor ONLY on training data
+    print("🔧 Fitting preprocessor on training data only...")
+    df_train_processed = preprocessor.fit_transform(data_train_raw)
 
-    # Sauvegarder les données traitées localement (s'assurer que c'est un DataFrame)
-    file_path =  f"{'_content_only' if content_only else ''}{'_metadata_only' if metadata_only else ''}{'_punct_removed' if (not metadata_only) and remove_punct else ''}{'_stopwords_removed' if (not metadata_only) and remove_stopwords else ''}{'_data_scaled' if  (not model_is_tree) and (not content_only) else ''}"
-    if hasattr(df_processed, 'to_csv'):
-        df_processed.to_csv(os.path.join(PATH_DATA, f"df_processed_{DATA_SIZE}" + file_path + ".csv"), index=False) # type: ignore
-    else:
-        # Convertir en DataFrame si nécessaire
-        pd.DataFrame(df_processed).to_csv(os.path.join(PATH_DATA, file_path), index=False)
+    # TRANSFORM validation data with fitted preprocessor
+    print("🔄 Transforming validation data with fitted preprocessor...")
+    df_val_processed = preprocessor.transform(data_val_raw)
 
-    # Sauvegarder le preprocesseur complet (nouveau pipeline)
-    save_preprocessor(preprocessor, f"pipeline_preprocessor{file_path}")
+    # Create file path suffix
+    file_path_suffix = (
+        f"{'_content_only' if content_only else ''}"
+        f"{'_metadata_only' if metadata_only else ''}"
+        f"{'_punct_removed' if (not metadata_only) and remove_punct else ''}"
+        f"{'_stopwords_removed' if (not metadata_only) and remove_stopwords else ''}"
+        f"{'_data_scaled' if (not model_is_tree) and (not content_only) else ''}"
+    )
 
-    # Sauvegarder aussi les composants individuels pour compatibilité
-    save_preprocessor(preprocessor.tfidf_vectorizer, "tfidf_vectorizer")
-    save_preprocessor(preprocessor.std_scaler, "standard_scaler")
+    # Save preprocessed data
+    if hasattr(df_train_processed, 'to_csv'):
+        train_path = os.path.join(PATH_DATA, f"df_train_processed_{DATA_SIZE}{file_path_suffix}.csv")
+        val_path = os.path.join(PATH_DATA, f"df_val_processed_{DATA_SIZE}{file_path_suffix}.csv")
+        df_train_processed.to_csv(train_path, index=False) # type: ignore
+        df_val_processed.to_csv(val_path, index=False)
 
-    print("✅main preprocess done (transformer approach)\n")
+    # Save the preprocessor (fitted on train only)
+    save_preprocessor(preprocessor, f"pipeline_preprocessor_train_only{file_path_suffix}")
 
-    return None
+    # Also save components for compatibility
+    if hasattr(preprocessor, 'tfidf_vectorizer'):
+        save_preprocessor(preprocessor.tfidf_vectorizer, "tfidf_vectorizer_train_only")
+    if hasattr(preprocessor, 'std_scaler'):
+        save_preprocessor(preprocessor.std_scaler, "standard_scaler_train_only")
+
+    print("✅ preprocess_and_split done (leak-free approach)\n")
+
+    return df_train_processed, df_val_processed, preprocessor
 
 
 def train(model_name: str, split_ratio: float = 0.2, chunk_size: int = 200,
-          remove_punct: bool = True, remove_stopwords: bool = True, content_only: bool = False,
-          tf_idf_min_ratio:float = 0.02, metadata_only: bool = False, model_is_tree: bool = False):
+          remove_punct: bool = True, remove_stopwords: bool = True,
+          content_only: bool = False, metadata_only: bool = False,
+          tf_idf_min_ratio: float = 0.02, model_is_tree: bool = False):
     """
-    - Charge les données préprocessées
-    - Entraîne le modèle avec le nouveau pipeline transformer
-    - Stocke les résultats et les poids du modèle
+    Train model with proper data leakage prevention.
+    """
+    print("🎬 main train starting (leak-free approach)................\n")
 
-    Return val_mae as a float
-    """
-    print("🎬 main train starting (transformer approach)................\n")
-    if model_name in ['RandomForestRegressor', 'ExtraTreesRegressor', 'GradientBoostingRegressor']:
+    if model_name in ['RandomForestRegressor', 'ExtraTreesRegressor', 'GradientBoostingRegressor', 'XGBRegressor']:
         model_is_tree = True
 
-    # Option 1: Utiliser le pipeline complet (recommandé)
-    try:
-        # Charger les données brutes pour le pipeline complet
-        file_path =  f"df_processed_{DATA_SIZE}{'_content_only' if content_only else ''}{'_metadata_only' if metadata_only else ''}{'_punct_removed' if (not metadata_only) and remove_punct else ''}{'_stopwords_removed' if (not metadata_only) and remove_stopwords else ''}{'_data_scaled' if  (not model_is_tree) and (not content_only) else ''}.csv"
-        preproc_name =  f"pipeline_preprocessor{'_content_only' if content_only else ''}{'_metadata_only' if metadata_only else ''}{'_punct_removed' if (not metadata_only) and remove_punct else ''}{'_stopwords_removed' if (not metadata_only) and remove_stopwords else ''}{'_data_scaled' if  (not model_is_tree) and (not content_only) else ''}"
+    # Create file path suffix for loading preprocessed data
+    file_path_suffix = (
+        f"{'_content_only' if content_only else ''}"
+        f"{'_metadata_only' if metadata_only else ''}"
+        f"{'_punct_removed' if (not metadata_only) and remove_punct else ''}"
+        f"{'_stopwords_removed' if (not metadata_only) and remove_stopwords else ''}"
+        f"{'_data_scaled' if (not model_is_tree) and (not content_only) else ''}"
+    )
 
-        if os.path.isfile(os.path.join(PATH_DATA, file_path)):
-            is_preprocessed = True
-            print(f"Loading preprocessed file : {file_path}")
-            data = pd.read_csv(os.path.join(PATH_DATA, file_path))
-            pipeline = Pipeline(
-                [
-                    ('preprocessor', load_preprocessor(preproc_name)),
-                    ('model', initialize_model(model_name))
-                ]
-            )
+    train_file = os.path.join(PATH_DATA, f"df_train_processed_{DATA_SIZE}{file_path_suffix}.csv")
+    val_file = os.path.join(PATH_DATA, f"df_val_processed_{DATA_SIZE}{file_path_suffix}.csv")
+
+    # Check if preprocessed data exists
+    if os.path.isfile(train_file) and os.path.isfile(val_file):
+        print(f"📂 Loading preprocessed data from files...")
+        df_train_processed = pd.read_csv(train_file)
+        df_val_processed = pd.read_csv(val_file)
+
+        # Separate features and target
+        if 'log1p_recommends' in df_train_processed.columns:
+            y_train = df_train_processed['log1p_recommends']
+            X_train = df_train_processed.drop(columns=['log1p_recommends'])
+            y_val = df_val_processed['log1p_recommends']
+            X_val = df_val_processed.drop(columns=['log1p_recommends'])
         else:
-            print(f"Preprocessed file {file_path} does not exist. Reverting to json file, and applying preprocessing.")
-            data = load_json_from_files(X_filepath=DATA_TRAIN, y_filepath=DATA_LOG_RECOMMEND, num_lines=DATA_SIZE)
+            raise ValueError("Target variable 'log1p_recommends' not found in preprocessed data")
 
-            # Créer le pipeline complet (preprocessing + model)
-            pipeline = create_medium_pipeline(
-                model_name=model_name,
-                chunk_size=chunk_size,
-                remove_punct=remove_punct,
-                remove_stopwords=remove_stopwords,
-                content_only=content_only,
-                metadata_only=metadata_only,
-                tf_idf_min_ratio=tf_idf_min_ratio,
-                model_is_tree=model_is_tree,
-                show_progress=True
-            )
-
-        # Split train/validation sur les données brutes
-        train_length = int(len(data) * (1 - split_ratio))
-        data_train, data_val = data[:train_length], data[train_length:]
-
-        # Entraîner le pipeline complet
-        trained_pipeline = train_pipeline(pipeline, data_train, is_preprocessed=is_preprocessed) # type: ignore
-
-        # Évaluer le pipeline
-        val_metrics = evaluate_pipeline(trained_pipeline, data_val, is_preprocessed=is_preprocessed)
-        val_mae = val_metrics.get('mae', 0.0)
-
-        # Sauvegarder le pipeline complet
-        custom_name =  f"{model_name}{'_content_only' if content_only else ''}{'_metadata_only' if metadata_only else ''}{'_punct_removed' if (not metadata_only) and remove_punct else ''}{'_stopwords_removed' if (not metadata_only) and remove_stopwords else ''}{'_data_scaled' if  (not model_is_tree) and (not content_only) else ''}"
-        save_model_with_custom_name(trained_pipeline, custom_name=custom_name)
-
-    except Exception as e:
-        print(f"❌ Pipeline approach failed: {e}")
-        print("🔄 Falling back to traditional approach...")
-
-        # Option 2: Fallback vers l'approche traditionnelle
-        df_processed = pd.read_csv(os.path.join(PATH_DATA, f"df_processed_{DATA_SIZE}.csv"))
-
-        # Créer X et y
-        X = df_processed.drop(columns=['log1p_recommends'])
-        y = df_processed['log1p_recommends']
-
-        # Split train/validation
-        train_length = int(len(df_processed) * (1 - split_ratio))
-        X_train, X_val = X[:train_length], X[train_length:]
-        y_train, y_val = y[:train_length], y[train_length:]
-
-        # Initialiser et entraîner le modèle
-        model = initialize_model(model_name=model_name)
+        # Initialize and train model
+        model = initialize_model(model_name)
         model = train_model(model=model, X=X_train, y=y_train)
 
-        # Évaluer
-        val_metric = evaluate_model(model=model, X=X_val, y=y_val)
-        val_mae = val_metric.get('mae', 0.0) if isinstance(val_metric, dict) else val_metric
+        # Evaluate on validation set
+        val_predictions = model.predict(X_val)
+        val_mae = mean_absolute_error(y_val, val_predictions) # type: ignore
 
-        # Sauvegarder le modèle traditionnel
+        # Save model
         save_model(model=model)
 
+    else:
+        print(f"⚠️ Preprocessed files not found. Running preprocessing with split...")
+
+        # Run preprocessing with proper split
+        df_train_processed, df_val_processed, preprocessor = preprocess_and_split(
+            split_ratio=split_ratio,
+            chunk_size=chunk_size,
+            remove_punct=remove_punct,
+            remove_stopwords=remove_stopwords,
+            content_only=content_only,
+            metadata_only=metadata_only,
+            model_is_tree=model_is_tree
+        )
+
+        # Create pipeline with already fitted preprocessor
+        pipeline = Pipeline([
+            ('preprocessor', preprocessor),
+            ('model', initialize_model(model_name))
+        ])
+
+        # Train only the model part (preprocessor already fitted)
+        if 'log1p_recommends' in df_train_processed.columns:
+            y_train = df_train_processed['log1p_recommends']
+            X_train = df_train_processed.drop(columns=['log1p_recommends'])
+
+            # Train model
+            pipeline.named_steps['model'].fit(X_train, y_train)
+
+            # Evaluate
+            y_val = df_val_processed['log1p_recommends']
+            X_val = df_val_processed.drop(columns=['log1p_recommends'])
+            val_predictions = pipeline.named_steps['model'].predict(X_val)
+            val_mae = mean_absolute_error(y_val, val_predictions)
+        else:
+            raise ValueError("Target variable not found in preprocessed data")
+
+        # Save complete pipeline
+        custom_name = f"{model_name}{file_path_suffix}"
+        save_model_with_custom_name(pipeline, custom_name=custom_name)
+
+    # Save results
     params = {
         "split_ratio": split_ratio,
-        "approach": "transformer_pipeline",
+        "approach": "leak_free_pipeline",
         "model_name": model_name
     }
 
-    # Save results
     save_results(model_name, params=params, metrics=dict(mae=val_mae))
-    print(f"Train finished with Val MAE : {val_mae}")
-    print("✅ main train() done (transformer approach)\n")
+    print(f"✅ Train finished with Val MAE: {val_mae:.4f}")
+    print("✅ main train() done (leak-free approach)\n")
+
     return val_mae
 
 
@@ -193,185 +207,195 @@ def evaluate(model_name: str, df_test: pd.DataFrame | None = None,
             content_only: bool = False, metadata_only: bool = False,
             model_is_tree: bool = False):
     """
-    Évalue la performance du modèle avec le nouveau pipeline transformer
-    Return metric as a float
+    Evaluate model on test set using preprocessor fitted ONLY on training data.
     """
-    print("🎬 main evaluate starting (transformer approach)................\n")
+    print("🎬 main evaluate starting (leak-free approach)................\n")
 
     if model_name in ['RandomForestRegressor', 'ExtraTreesRegressor', 'GradientBoostingRegressor', 'XGBRegressor']:
         model_is_tree = True
-    else:
-        model_is_tree = False
 
     if df_test is None:
-        # Charger les données de test
-        df_test = load_json_from_files(X_filepath=DATA_TEST, y_filepath=DATA_TEST_LOG_RECOMMEND, num_lines=DATA_TEST_SIZE)
+        # Load test data
+        df_test = load_json_from_files(
+            X_filepath=DATA_TEST,
+            y_filepath=DATA_TEST_LOG_RECOMMEND,
+            num_lines=DATA_TEST_SIZE
+        )
 
-    # Option 1: Essayer d'utiliser le pipeline complet (recommandé)
+    # Create file path suffix
+    file_path_suffix = (
+        f"{'_content_only' if content_only else ''}"
+        f"{'_metadata_only' if metadata_only else ''}"
+        f"{'_punct_removed' if (not metadata_only) and remove_punct else ''}"
+        f"{'_stopwords_removed' if (not metadata_only) and remove_stopwords else ''}"
+        f"{'_data_scaled' if (not model_is_tree) and (not content_only) else ''}"
+    )
+
     try:
-        # Charger le pipeline complet
-        custom_name =  f"{model_name}{'_content_only' if content_only else ''}{'_metadata_only' if metadata_only else ''}{'_punct_removed' if (not metadata_only) and remove_punct else ''}{'_stopwords_removed' if (not metadata_only) and remove_stopwords else ''}{'_data_scaled' if (not model_is_tree) and (not content_only) else ''}"
+        # Load the preprocessor that was fitted ONLY on training data
+        preprocessor_name = f"pipeline_preprocessor_train_only{file_path_suffix}"
+        preprocessor = load_preprocessor(preprocessor_name)
 
-        pipeline = load_model(f"{custom_name}")
-
-        if pipeline is not None and hasattr(pipeline, 'named_steps'):
-            print(f"ℹ️ Using complete pipeline: {custom_name}")
-
-            preprocessed_data = pipeline.named_steps['preprocessor'].transform(df_test)
-
-            # Évaluer avec le pipeline
-            metrics = evaluate_pipeline(pipeline, preprocessed_data, is_preprocessed=True)
-            mae = metrics.get('mae', 0.0)
-
-            # Faire des prédictions pour les résultats détaillés
-            y_pred = predict_pipeline(pipeline, df_test.drop(columns=['log1p_recommends'], errors='ignore'))
-            old_pred = df_test['log1p_recommends'].values
-
-            # Assurer l'alignement des données (le pipeline peut avoir filtré des lignes)
-            if 'log1p_recommends' in preprocessed_data.columns:
-                old_pred = preprocessed_data['log1p_recommends'].values
-        else:
-            raise ValueError("❌ Pipeline not found or invalid")
-
-    except Exception as e:
-        print(f"❌ Pipeline approach failed: {e}")
-        print("🔄 Falling back to traditional approach...")
-
-        # Option 2: Fallback vers l'approche traditionnelle
-        model = load_model(model_name)
-        tfidf_preprocessor = load_preprocessor('tfidf_vectorizer')
-        std_preprocessor = load_preprocessor('standard_scaler')
-
-        if model is not None:
-            print(f"ℹ️ the model type: {model.__class__.__name__}")
-
-            X_processed, __tfidf, __scaler = preprocess_features(
-                df_test,
-                chunksize=200,
-                remove_punct=remove_punct,
-                remove_stopwords=remove_stopwords,
-                tfidf_vectorizer=tfidf_preprocessor,
-                std_scaler=std_preprocessor
+        if preprocessor is None:
+            raise ValueError(
+                f"❌ No training-only preprocessor found ({preprocessor_name}). "
+                "This could indicate data leakage in previous training!"
             )
 
-            print(f"ℹ️ X_processed shape: {X_processed.shape}")
-            old_pred = X_processed['log1p_recommends'].copy()
-            y_pred = model.predict(X_processed.drop(columns=['log1p_recommends']))
+        # Transform test data using training preprocessor
+        print("🔄 Transforming test data with training preprocessor...")
+        df_test_processed = preprocessor.transform(df_test)
 
-            mae = mean_absolute_error(old_pred, y_pred)
+        # Load model
+        model = load_model(model_name)
+
+        if model is None:
+            # Try loading pipeline
+            custom_name = f"{model_name}{file_path_suffix}"
+            model = load_model(custom_name)
+
+            if model is None:
+                raise ValueError(f"Model {model_name} not found")
+
+        # Separate features and target
+        if 'log1p_recommends' in df_test_processed.columns:
+            y_test = df_test_processed['log1p_recommends']
+            X_test = df_test_processed.drop(columns=['log1p_recommends'])
         else:
-            raise ValueError("Model not found")
+            raise ValueError("Target variable not found in test data")
 
-    # Transformation inverse si nécessaire
-    y_pred_original = np.expm1(y_pred)
+        # Make predictions
+        # if hasattr(model, 'predict'):
+        #     y_pred = model.predict(X_test)
+        if hasattr(model, 'named_steps') and 'model' in model.named_steps:
+            y_pred = model.named_steps['model'].predict(X_test)
+        else:
+            raise ValueError("Model does not have predict method")
 
-    # Créer DataFrame des résultats
-    min_length = min(len(old_pred), len(y_pred), len(y_pred_original))
-    results_df = pd.DataFrame({
-        'old_pred': old_pred[:min_length],
-        'new_pred': y_pred[:min_length],
-        'nb_reco': y_pred_original[:min_length]
-    })
+        # Calculate metrics
+        mae = mean_absolute_error(y_test, y_pred)
 
-    # Sauvegarder les prédictions
-    date_run = time.strftime("%Y%m%d-%H%M%S")
-    model_type = "Unknown"
-    if 'pipeline' in locals() and pipeline is not None and hasattr(pipeline, 'named_steps'):
-        model_type = type(pipeline.named_steps['model']).__name__
-    elif 'model' in locals() and model is not None:
-        model_type = model.__class__.__name__
+        # Transform back to original scale
+        y_pred_original = np.expm1(y_pred)
 
-    target_path = os.path.join(PATH_METRICS, f"metrics_{DATA_SIZE}_{model_type}_{date_run}.csv")
-    results_df.to_csv(target_path, index=False)
+        # Create results DataFrame
+        results_df = pd.DataFrame({
+            'actual_log1p': y_test[:len(y_pred)],
+            'predicted_log1p': y_pred,
+            'predicted_recommends': y_pred_original
+        })
 
-    print(f"✅ = = = = = = = = => mean_absolute_error: {mae}")
-    print(f"✅ evaluate done (transformer approach)")
-    return mae
+        # Save predictions
+        date_run = time.strftime("%Y%m%d-%H%M%S")
+        model_type = model.__class__.__name__ if hasattr(model, '__class__') else "Unknown"
+        target_path = os.path.join(PATH_METRICS, f"test_metrics_{DATA_SIZE}_{model_type}_{date_run}.csv")
+        results_df.to_csv(target_path, index=False)
 
+        print(f"✅ Test MAE: {mae:.4f}")
+        print(f"✅ evaluate done (leak-free approach)")
+
+        return mae
+
+    except Exception as e:
+        print(f"❌ Evaluation failed: {e}")
+        raise
 
 
 def pred(model_name: str, text: str = "", title: str = ""):
     """
-    Fait une prédiction using le nouveau pipeline transformer
+    Make prediction using model and preprocessor fitted ONLY on training data.
     """
-    print("🎬 pred starting (transformer approach)................\n")
+    print("🎬 pred starting (leak-free approach)................\n")
 
-    # Créer le DataFrame de prédiction
+    # Create prediction DataFrame
     X_pred = create_dataframe_to_predict(text, title)
-    print(f"ℹ️ The text: {text}")
+    print(f"ℹ️ The text: {text[:100]}...")
     print(f"ℹ️ The title: {title}")
 
-    # Option 1: Essayer d'utiliser le pipeline complet (recommandé)
     try:
-        # Charger le pipeline complet
-        pipeline = load_model(f"{model_name}_pipeline")
+        # Load preprocessor fitted on training data only
+        preprocessor = load_preprocessor("pipeline_preprocessor_train_only")
 
-        if pipeline is not None and hasattr(pipeline, 'named_steps'):
-            print(f"ℹ️ Using complete pipeline: {type(pipeline)}")
+        if preprocessor is None:
+            # Try with full name
+            preprocessor = load_preprocessor("tfidf_vectorizer_train_only")
 
-            # Faire la prédiction avec le pipeline
-            y_pred = predict_pipeline(pipeline, X_pred)
+            if preprocessor is None:
+                raise ValueError(
+                    "❌ No training-only preprocessor found. "
+                    "Please retrain with leak-free approach."
+                )
 
-            model_type = type(pipeline.named_steps['model']).__name__
-            print(f"ℹ️ the model type: {model_type}")
-        else:
-            raise ValueError("Pipeline not found or invalid")
-
-    except Exception as e:
-        print(f"❌ Pipeline approach failed: {e}")
-        print("🔄 Falling back to traditional approach...")
-
-        # Option 2: Fallback vers l'approche traditionnelle
-        data_cleaned = clean_data(X_pred)
-
+        # Load model
         model = load_model(model_name)
-        preprocessor = load_preprocessor('tfidf_vectorizer')  # Utiliser le TF-IDF vectorizer
 
-        if model is not None:
-            print(f"ℹ️ the model type: {model.__class__.__name__}")
+        if model is None:
+            raise ValueError(f"Model {model_name} not found")
 
+        # Preprocess input
+        if hasattr(preprocessor, 'transform'):
+            # Using full pipeline preprocessor
+            X_processed = preprocessor.transform(X_pred)
+
+            # Remove target column if present
+            if 'log1p_recommends' in X_processed.columns:
+                X_processed = X_processed.drop(columns=['log1p_recommends'])
+        else:
+            # Using individual preprocessor (backward compatibility)
+            data_cleaned = clean_data(X_pred)
             X_processed = preprocess_pred(data_cleaned, preprocessor)
+
+        # Make prediction
+        if hasattr(model, 'predict'):
             y_pred = model.predict(X_processed)
         else:
-            raise ValueError("Model not found")
+            raise ValueError("Model does not have predict method")
 
-    print(f"ℹ️ the probability (log1p): {y_pred}")
+        print(f"ℹ️ Prediction (log1p): {y_pred}")
 
-    # Transformation inverse
-    nb_recommandation = np.expm1(y_pred)
-    print(f"ℹ️ the nb of claps: {nb_recommandation}")
+        # Transform back to original scale
+        nb_recommandation = np.expm1(y_pred)
+        print(f"ℹ️ Predicted number of claps: {nb_recommandation}")
 
-    # Optionnel: Sauvegarder les prédictions
-    # date_run = time.strftime("%Y%m%d-%H%M%S")
-    # target_path = os.path.join(PATH_PREDICTION, f"predictions_{model_type}_{date_run}.csv")
-    # results_df.to_csv(target_path, index=False)
+        print(f"✅ pred() done (leak-free approach)")
+        return nb_recommandation
 
-    print(f"✅ pred() end (transformer approach)")
-    return nb_recommandation
+    except Exception as e:
+        print(f"❌ Prediction failed: {e}")
+        raise
 
 
-def run_all(model_name:str, remove_punct: bool = False, remove_stopwords: bool = False,
+def run_all(model_name: str, remove_punct: bool = False, remove_stopwords: bool = False,
             content_only: bool = False, metadata_only: bool = False,
             model_is_tree: bool = False):
-    print("🎬 run all starting ................\n")
-    preprocess(1000, remove_punct, remove_stopwords, content_only,
-               metadata_only, model_is_tree)
+    """
+    Run complete pipeline with proper data leakage prevention.
+    """
+    print("🎬 run_all starting (leak-free approach)................\n")
 
-    train(model_name=model_name, remove_punct=remove_punct,
-          remove_stopwords=remove_stopwords, content_only=content_only,
-          metadata_only=metadata_only, model_is_tree=model_is_tree)
+    # This will handle splitting and preprocessing properly
+    train(
+        model_name=model_name,
+        remove_punct=remove_punct,
+        remove_stopwords=remove_stopwords,
+        content_only=content_only,
+        metadata_only=metadata_only,
+        model_is_tree=model_is_tree
+    )
 
-    evaluate(model_name=model_name, df_test=None, remove_punct=remove_punct,
-             remove_stopwords=remove_stopwords, content_only=content_only,
-             metadata_only=metadata_only, model_is_tree=model_is_tree)
+    # Evaluate using preprocessor fitted only on training data
+    evaluate(
+        model_name=model_name,
+        df_test=None,
+        remove_punct=remove_punct,
+        remove_stopwords=remove_stopwords,
+        content_only=content_only,
+        metadata_only=metadata_only,
+        model_is_tree=model_is_tree
+    )
 
-    # pred(model_name)
-    print(f" ✅ run all end.\n")
+    print(f"✅ run_all done (leak-free approach)\n")
+
 
 if __name__ == '__main__':
-    # Workflow complet
-    # preprocess()
-    # train()
-    # evaluate()
-    # pred()
     pass
