@@ -11,8 +11,8 @@ st.title("GradientBoostingRegressor Model ")
 
 
 df = load_json_from_files(
-    X_filepath='raw_data/test.json',
-    y_filepath='raw_data/test_log1p_recommends.csv',
+    X_filepath='raw_data/X_test.json',
+    y_filepath='raw_data/y_test.csv',
     num_lines=100
 )
 
@@ -29,8 +29,8 @@ url = 'https://boost-medium-docker-759226870731.europe-west1.run.app'
 
 
 dict_params = {
-    'model_name': 'GradientBoostingRegressor',
-    'title': title
+    'model_name': 'GradientBoostingRegressor_punct_removed_stopwords_removed',
+    'title': df[df['title'] == title].to_json()
 }
 
 

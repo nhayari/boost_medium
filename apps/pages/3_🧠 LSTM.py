@@ -11,8 +11,8 @@ st.title("LSTM Model ")
 
 
 df = load_json_from_files(
-    X_filepath='raw_data/test.json',
-    y_filepath='raw_data/test_log1p_recommends.csv',
+    X_filepath='raw_data/X_test.json',
+    y_filepath='raw_data/y_test.csv',
     num_lines=100
 )
 

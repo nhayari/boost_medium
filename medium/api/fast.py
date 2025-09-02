@@ -1,9 +1,6 @@
 import pandas as pd
 from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
-from medium.interface.main import pred
 from medium.ml_logic.registry import load_model,load_preprocessor
-from medium.ml_logic.preprocessor import MediumPreprocessingPipeline
 from medium.params import *
 from medium.ml_logic.model import *
 import json
@@ -32,7 +29,6 @@ async def predict(request: Request):
     """
     request_data = await request.json()
     request_data['title'] = json.loads(request_data['title'])
-    print(type(request_data['title']))
     model = load_model(model_name=request_data['model_name'])
     df_title = pd.DataFrame(request_data['title'])
     X_proc = load_preprocessor('pipeline_preprocessor_punct_removed_stopwords_removed_data_scaled')
