@@ -7,7 +7,6 @@ from sklearn.pipeline import Pipeline
 from medium.params import *
 
 
-
 def save_results(model_name: str, params: dict, metrics: dict) -> bool:
     """
     Persist params & metrics locally on the hard drive at

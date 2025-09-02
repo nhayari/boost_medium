@@ -15,7 +15,7 @@ df = load_json_from_files(
     y_filepath='raw_data/y_test.csv',
     num_lines=100
 )
-
+df = df[df['domain'] == 'medium.com'].copy()
 # Sélection du modèle
 title = st.selectbox('Select Title', df['title'])
 
@@ -40,4 +40,4 @@ prediction = requests.post(url=f"{url}/predict", json=dict_params)
 
 #Prediction
 if st.button('Prediction'):
-    st.write(prediction)
+    st.write(prediction.json()['recommandations'])

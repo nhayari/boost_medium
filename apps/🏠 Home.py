@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from medium.ml_logic.registry import load_model
-from medium.ml_logic.preprocessor import preprocess_features
 import time
 import datetime
 import requests

@@ -16,6 +16,8 @@ df = load_json_from_files(
     num_lines=100
 )
 
+df = df[df['domain'] == 'medium.com'].copy()
+
 # Sélection du modèle
 title = st.selectbox('Select Title', df['title'])
 

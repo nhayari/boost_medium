@@ -16,6 +16,8 @@ df = load_json_from_files(
     num_lines=100
 )
 
+df = df[df['domain'] == 'medium.com'].copy()
+
 # Sélection du modèle
 title = st.selectbox('Select Title', df['title'])
 
@@ -25,7 +27,7 @@ st.write('The url is ', df[df['title'] == title]['url'].values[0])
 st.write('The author is ', df[df['title'] == title]['author'].iloc[0]['twitter'])
 
 
-url = 'https://boost-medium-docker-759226870731.europe-west1.run.app'
+url = 'http://0.0.0.0:8000'
 
 
 dict_params = {
@@ -34,9 +36,9 @@ dict_params = {
 }
 
 
-prediction = requests.get(url=url, params=dict_params)
+prediction = requests.post(url=f"{url}/predict", json=dict_params)
 
 
 #Prediction
 if st.button('Prediction'):
-    st.write(prediction)
+    st.write(prediction.json()['recommandations'])
