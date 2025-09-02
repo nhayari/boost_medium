@@ -1,12 +1,15 @@
 import pandas as pd
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from medium.interface.main import pred
-# from medium.ml_logic.registry import load_model
-# from medium.ml_logic.preprocessor import preprocess_features
+from fastapi import FastAPI, Request
+from medium.ml_logic.registry import load_model,load_preprocessor
+from medium.params import *
+from medium.ml_logic.model import *
+import json
 
 app = FastAPI()
-# app.state.model = load_model()
+
+# app.state.model = load_model(model_name='Ridge')
+
+
 
 # Allowing all middleware is optional, but good practice for dev purposes
 # app.add_middleware(
@@ -18,17 +21,19 @@ app = FastAPI()
 # )
 
 
-@app.get("/predict")
-def predict(model_name:str, text: str ):
+@app.post("/predict")
+async def predict(request: Request):
     """
     Make a single course prediction.
     Assumes `text` is provided by the user
     """
-    # model =  ????
-    # X_processed = ????
-    # y_pred = ????
-    # return {'recommandations':  ??? }
-    return 'coucou'
+    request_data = await request.json()
+    request_data['title'] = json.loads(request_data['title'])
+    model = load_model(model_identifier=request_data['model_name'])
+    df_title = pd.DataFrame(request_data['title'])
+    y_pred = model.predict(df_title)
+    print(np.expm1(y_pred))
+    return {'recommandations': float(y_pred)}
 
 @app.get("/")
 def root():
