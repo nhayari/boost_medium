@@ -2,7 +2,6 @@ import pandas as pd
 import jsonlines
 import re
 from html import unescape
-
 from medium.params import *
 
 HTML_TAG_PATTERN = re.compile(r'<[^>]+>')
@@ -10,14 +9,15 @@ WHITESPACE_PATTERN = re.compile(r'\s+')
 
 def load_json_from_files(X_filepath, y_filepath, num_lines: int | None = None) -> pd.DataFrame:
     """
-    Create DataFrame from the .json files avec possibilité de limiter le nombre de lignes.
+    Create DataFrame from the .json files with possibility to limit the number of lines.
 
     Args:
-        X_filepath (str): Chemin vers le fichier JSON
-        num_lines (int, optional): Nombre maximum de lignes à charger. Si None, charge tout.
+        X_filepath (str): Path to the JSON file
+        y_filepath (str): Path to the CSV file with target values
+        num_lines (int, optional): Maximum number of lines to load. If None, loads all.
 
     Returns:
-        pd.DataFrame: DataFrame contenant les données
+        pd.DataFrame: DataFrame containing the data
     """
     records = []
     line_count = 0
@@ -27,7 +27,7 @@ def load_json_from_files(X_filepath, y_filepath, num_lines: int | None = None) -
             for obj in reader:
                 records.append(obj)
                 line_count += 1
-                # Arrêter si on a atteint le nombre de lignes demandé
+                # Stop if we've reached the requested number of lines
                 if num_lines is not None and line_count >= int(num_lines):
                     break
     except Exception as generalError:
@@ -39,88 +39,84 @@ def load_json_from_files(X_filepath, y_filepath, num_lines: int | None = None) -
     df = pd.DataFrame(records)
     df_y = load_csv(y_filepath, num_lines=num_lines)
 
-
     df_final = pd.concat([df, df_y['log1p_recommends']], axis=1)
 
     print(f"Final DataFrame shape after concatenation: {df_final.shape}")
 
     return df_final
 
+
 def load_csv(filepath, num_lines: int | None = None) -> pd.DataFrame:
     """
-    Lit le fichier CSV et crée un DataFrame.
+    Read CSV file and create DataFrame.
 
     Args:
-        filepath (str): Chemin du fichier CSV
-        num_lines (int, optional): Nombre de lignes à lire
+        filepath (str): CSV file path
+        num_lines (int, optional): Number of lines to read
 
     Returns:
-        pd.DataFrame: DataFrame avec les colonnes '_id' et 'log1p_recommends'
+        pd.DataFrame: DataFrame with columns '_id' and 'log1p_recommends'
     """
     if num_lines:
         df = pd.read_csv(filepath, nrows=num_lines)
     else:
         df = pd.read_csv(filepath)
 
-    # Renommer les colonnes pour être cohérent
+    # Rename columns for consistency
     df = df.rename(columns={'id': '_id', 'log_recommends': 'log1p_recommends'})
 
     return df
 
 
-
 def convert_dict_columns(df: pd.DataFrame, drop_cols: bool = True) -> pd.DataFrame:
     """
-    Extrait et aplatit les colonnes contenant des dictionnaires dans un DataFrame pandas.
-
-    Cette fonction transforme chaque clé de dictionnaire en une nouvelle colonne distincte,
-    permettant de normaliser des données JSON ou des structures imbriquées.
+    Extract and flatten columns containing dictionaries in a pandas DataFrame.
 
     Parameters
     ----------
     df : pandas.DataFrame
-        Le DataFrame contenant les colonnes à traiter
+        The DataFrame containing columns to process
     drop_cols : bool, default True
-        Si True, supprime les colonnes originales après extraction
+        If True, removes original columns after extraction
 
     Returns
     -------
     pandas.DataFrame
-        DataFrame modifié avec les nouvelles colonnes extraites
-
+        Modified DataFrame with new extracted columns
     """
-    # Créer une copie pour éviter de modifier l'original
+    # Create a copy to avoid modifying the original
     df_result = df.copy()
 
-    # Colonnes à supprimer à la fin
+    # Columns to drop at the end
     cols_to_drop = []
 
     for col in df.columns:
-        # Vérifier si toutes les valeurs sont des dictionnaires
+        # Check if all values are dictionaries
         if df[col].apply(lambda c: isinstance(c, dict)).all():
 
-            # Utiliser json_normalize pour aplatir la colonne
+            # Use json_normalize to flatten the column
             dict_list = df[col].tolist()
             normalized = pd.json_normalize(dict_list)
 
-            # Renommer les colonnes avec le préfixe de la colonne originale
+            # Rename columns with the original column prefix
             normalized.columns = [f'{col}_{col_name}' for col_name in normalized.columns]
 
-            # Conserver l'index original pour l'alignement
+            # Keep the original index for alignment
             normalized.index = df.index
 
-            # Ajouter les nouvelles colonnes au DataFrame
+            # Add the new columns to the DataFrame
             df_result = pd.concat([df_result, normalized], axis=1)
 
-            # Marquer la colonne pour suppression si demandé
+            # Mark column for deletion if requested
             if drop_cols:
                 cols_to_drop.append(col)
 
-    # Supprimer les colonnes originales si demandé
+    # Remove original columns if requested
     if cols_to_drop:
         df_result.drop(columns=cols_to_drop, inplace=True)
 
     return df_result
+
 
 def title_contains_high_non_ascii_ratio(title: str, threshold: float = 0.2) -> bool:
     """
@@ -146,6 +142,36 @@ def title_contains_high_non_ascii_ratio(title: str, threshold: float = 0.2) -> b
 
     return ratio > threshold
 
+def flag_problematic_articles(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Flag articles that might be problematic instead of removing them.
+    This allows the model to learn from these patterns during training.
+
+    Parameters:
+    -----------
+    df : pandas.DataFrame
+        Input dataframe
+
+    Returns:
+    --------
+    pandas.DataFrame
+        Dataframe with flags added
+    """
+    df_flagged = df.copy()
+
+    # Flag articles with high non-ASCII ratio in title
+    if 'title' in df_flagged.columns:
+        df_flagged['high_non_ascii_title'] = df_flagged['title'].apply(
+            title_contains_high_non_ascii_ratio
+        ).astype(int)
+
+    # Flag non-Medium articles
+    if 'domain' in df_flagged.columns:
+        df_flagged['is_medium'] = (df_flagged['domain'] == 'medium.com').astype(int)
+
+    return df_flagged
+
+
 def remove_constant_columns(df: pd.DataFrame, exclude_cols: list | str | None = None) -> pd.DataFrame:
     """
     Remove columns with only one unique value.
@@ -156,21 +182,11 @@ def remove_constant_columns(df: pd.DataFrame, exclude_cols: list | str | None = 
         Input dataframe
     exclude_cols : list, str, or None
         Column name(s) to exclude from constant checking.
-        These columns will be kept regardless of their variance.
-        Can be a single column name (str) or list of column names.
 
     Returns:
     --------
     pandas.DataFrame
         Dataframe with constant columns removed (except excluded ones)
-
-    Examples:
-    ---------
-    # Exclude single column
-    df_cleaned = remove_constant_columns_optimized(df, exclude_cols='id')
-
-    # Exclude multiple columns
-    df_cleaned = remove_constant_columns_optimized(df, exclude_cols=['id', 'timestamp', 'user_id'])
     """
     # Handle exclude_cols parameter
     if exclude_cols is None:
@@ -198,27 +214,25 @@ def remove_constant_columns(df: pd.DataFrame, exclude_cols: list | str | None = 
 
     return df[cols_to_keep]
 
-def clean_data(df: pd.DataFrame) -> pd.DataFrame:
+
+def clean_data(df: pd.DataFrame, remove_problematic: bool = True) -> pd.DataFrame:
     """
     Clean raw data by flattening dict columns, removing constant columns,
-    and stripping HTML tags from 'content' column.
+    and optionally filtering problematic articles.
+
     Parameters:
     -----------
     df : pandas.DataFrame
         Input dataframe to clean
-    chunk_size : int
-        Number of rows to process at a time when stripping HTML tags
+    remove_problematic : bool
+        If True, removes problematic articles (high non-ASCII, non-Medium).
+        Should be False during initial preprocessing to preserve data distribution.
+
     Returns:
     --------
     pandas.DataFrame
         Cleaned dataframe
-    Notes:
-    ------
-    - Assumes 'content' column exists for HTML stripping
-    - Excludes 'content' and 'tags' columns from constant removal
-    - Prints progress messages during cleaning steps
     """
-
     print("🎬 Data cleaning started...\n")
 
     if not df.empty:
@@ -230,29 +244,34 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
 
         # 2. Remove constant columns
         if len(df) > 1:
-            df = remove_constant_columns(df, exclude_cols=['content', 'tags'])
+            df = remove_constant_columns(df, exclude_cols=['content', 'tags', 'log1p_recommends'])
             print(f" - Removed constant columns, remaining columns: {df.shape[1]}")
 
-        # 3. Remove articles where their title contains 20% of non-ASCII characters
-        if 'title' in df.columns:
-            initial_count = len(df)
-            df = df[~df['title'].apply(title_contains_high_non_ascii_ratio)]
-            removed_count = initial_count - len(df)
-            print(f" - Removed {removed_count} articles with high non-ASCII ratio in title")
-        else:
-            print(" - 'title' column not found; skipping non-ASCII title filtering")
+        # 3. Handle problematic articles
+        if remove_problematic:
+            # Remove articles where title contains >20% non-ASCII characters
+            if 'title' in df.columns:
+                initial_count = len(df)
+                df = df[~df['title'].apply(title_contains_high_non_ascii_ratio)]
+                removed_count = initial_count - len(df)
+                print(f" - Removed {removed_count} articles with high non-ASCII ratio in title")
 
-        # 4. Remove article not from domain name 'medium.com'
-        print(f" - Remove articles not on Medium.")
-        print(df.columns)
-        if 'domain' in df.columns:
-            df = df[df['domain'] == 'medium.com']
+            # Remove articles not from domain 'medium.com'
+            if 'domain' in df.columns:
+                initial_count = len(df)
+                df = df[df['domain'] == 'medium.com']
+                removed_count = initial_count - len(df)
+                print(f" - Removed {removed_count} non-Medium articles")
+        else:
+            # Just flag them for the model to learn from
+            df = flag_problematic_articles(df)
+            print(" - Flagged problematic articles (not removed)")
 
     print("✅ Data cleaned")
     return df
 
 
-def create_dataframe_to_predict(text: str = "", title: str = ""):
+def create_dataframe_to_predict(text: str = "", title: str = "") -> pd.DataFrame:
     """
     Create a DataFrame for prediction with all required columns for the preprocessing pipeline.
     """
@@ -284,3 +303,76 @@ def create_dataframe_to_predict(text: str = "", title: str = ""):
     })
 
     return df
+
+
+def validate_data_integrity(df: pd.DataFrame) -> dict:
+    """
+    Validate data integrity and return statistics.
+
+    Parameters:
+    -----------
+    df : pandas.DataFrame
+        DataFrame to validate
+
+    Returns:
+    --------
+    dict
+        Dictionary with validation statistics
+    """
+    stats = {
+        'total_rows': len(df),
+        'total_columns': len(df.columns),
+        'missing_values': df.isnull().sum().sum(),
+        'duplicate_rows': df.duplicated().sum(),
+    }
+
+    if 'title' in df.columns:
+        stats['high_non_ascii_titles'] = df['title'].apply(title_contains_high_non_ascii_ratio).sum()
+
+    if 'domain' in df.columns:
+        stats['non_medium_articles'] = (df['domain'] != 'medium.com').sum()
+
+    if 'log1p_recommends' in df.columns:
+        stats['target_mean'] = df['log1p_recommends'].mean()
+        stats['target_std'] = df['log1p_recommends'].std()
+        stats['target_min'] = df['log1p_recommends'].min()
+        stats['target_max'] = df['log1p_recommends'].max()
+
+    return stats
+
+
+def split_data_stratified(df: pd.DataFrame, split_ratio: float = 0.2,
+                         stratify_col: str | None = None) -> tuple:
+    """
+    Split data with optional stratification.
+
+    Parameters:
+    -----------
+    df : pandas.DataFrame
+        DataFrame to split
+    split_ratio : float
+        Proportion of data for validation
+    stratify_col : str
+        Column name to use for stratification
+
+    Returns:
+    --------
+    tuple
+        (train_df, val_df)
+    """
+    if stratify_col and stratify_col in df.columns:
+        # Use stratified split
+        from sklearn.model_selection import train_test_split
+        train_df, val_df = train_test_split(
+            df,
+            test_size=split_ratio,
+            stratify=df[stratify_col],
+            random_state=42
+        )
+    else:
+        # Simple split
+        train_length = int(len(df) * (1 - split_ratio))
+        train_df = df[:train_length].copy()
+        val_df = df[train_length:].copy()
+
+    return train_df, val_df
