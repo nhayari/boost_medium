@@ -23,4 +23,7 @@ catboost
 # pytz
 uvicorn
 
+#deep learning
+gensim
+tensorflow
 xgboost
