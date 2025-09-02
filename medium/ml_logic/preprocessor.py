@@ -852,14 +852,15 @@ class MediumPreprocessingPipeline(BaseEstimator, TransformerMixin):
             )
             X = text_cleaner.fit_transform(X)
 
-            # 4. Strip HTML tags
-            print(" - Stripping HTML tags...")
-            html_stripper = HTMLTagStripper(
-                text_columns=self.html_columns,
-                chunk_size=self.chunk_size,
-                show_progress=self.show_progress
-            )
-            X = html_stripper.fit_transform(X)
+            if self.content_only:
+                # 4. Strip HTML tags
+                print(" - Stripping HTML tags...")
+                html_stripper = HTMLTagStripper(
+                    text_columns=self.html_columns,
+                    chunk_size=self.chunk_size,
+                    show_progress=self.show_progress
+                )
+                X = html_stripper.fit_transform(X)
 
             # 7. Tokenize and lemmatize
 

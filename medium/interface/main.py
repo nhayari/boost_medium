@@ -47,6 +47,7 @@ def preprocess(chunk_size: int = 1000, remove_punct: bool = False,
     - Stocke les données traitées et le preprocesseur
     """
     print("🎬 main preprocess starting (transformer approach)................\n")
+    print(locals())
 
     # Charger les données JSON
     data = load_json_from_files(X_filepath=DATA_TRAIN, y_filepath=DATA_LOG_RECOMMEND, num_lines=DATA_SIZE)
@@ -214,10 +215,12 @@ def evaluate(model_name: str, df_test: pd.DataFrame | None = None,
         pipeline = load_model(f"{custom_name}")
 
         if pipeline is not None and hasattr(pipeline, 'named_steps'):
-            print(f"ℹ️ Using complete pipeline: {type(pipeline)}")
+            print(f"ℹ️ Using complete pipeline: {custom_name}")
+
+            preprocessed_data = pipeline.named_steps['preprocessor'].transform(df_test)
 
             # Évaluer avec le pipeline
-            metrics = evaluate_pipeline(pipeline, df_test)
+            metrics = evaluate_pipeline(pipeline, preprocessed_data, is_preprocessed=True)
             mae = metrics.get('mae', 0.0)
 
             # Faire des prédictions pour les résultats détaillés
@@ -225,11 +228,10 @@ def evaluate(model_name: str, df_test: pd.DataFrame | None = None,
             old_pred = df_test['log1p_recommends'].values
 
             # Assurer l'alignement des données (le pipeline peut avoir filtré des lignes)
-            preprocessed_data = pipeline.named_steps['preprocessor'].transform(df_test)
             if 'log1p_recommends' in preprocessed_data.columns:
                 old_pred = preprocessed_data['log1p_recommends'].values
         else:
-            raise ValueError("Pipeline not found or invalid")
+            raise ValueError("❌ Pipeline not found or invalid")
 
     except Exception as e:
         print(f"❌ Pipeline approach failed: {e}")
@@ -348,11 +350,21 @@ def pred(model_name: str, text: str = "", title: str = ""):
     return nb_recommandation
 
 
-def run_all(model_name:str):
+def run_all(model_name:str, remove_punct: bool = False, remove_stopwords: bool = False,
+            content_only: bool = False, metadata_only: bool = False,
+            model_is_tree: bool = False):
     print("🎬 run all starting ................\n")
-    preprocess()
-    train(model_name)
-    evaluate(model_name)
+    preprocess(1000, remove_punct, remove_stopwords, content_only,
+               metadata_only, model_is_tree)
+
+    train(model_name=model_name, remove_punct=remove_punct,
+          remove_stopwords=remove_stopwords, content_only=content_only,
+          metadata_only=metadata_only, model_is_tree=model_is_tree)
+
+    evaluate(model_name=model_name, df_test=None, remove_punct=remove_punct,
+             remove_stopwords=remove_stopwords, content_only=content_only,
+             metadata_only=metadata_only, model_is_tree=model_is_tree)
+
     # pred(model_name)
     print(f" ✅ run all end.\n")
 
