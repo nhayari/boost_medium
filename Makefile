@@ -14,7 +14,6 @@ help:
 	@echo "> make train model_name=        - Entraîner le modèle (avec preprocessing intégré)"
 	@echo "> make evaluate model_name=    - Evaluer le modèle"
 	@echo "> make run_all model_name=      - run in the order : train -> evaluate"
-	@echo "> make pred model_name=yourmodel text=yourtext               - text must be in '  '"
 	@echo " ! Model names: LGBMRegressor, XGBRegressor, GradientBoostingRegressor, Ridge,"
 	@echo "   ExtraTreesRegressor, RandomForestRegressor, LinearRegression, ElasticNet"
 	@echo ""

@@ -265,9 +265,9 @@ def evaluate(model_name: str, df_test: pd.DataFrame | None = None,
             raise ValueError("Target variable not found in test data")
 
         # Make predictions
-        if hasattr(model, 'predict'):
-            y_pred = model.predict(X_test)
-        elif hasattr(model, 'named_steps') and 'model' in model.named_steps:
+        # if hasattr(model, 'predict'):
+        #     y_pred = model.predict(X_test)
+        if hasattr(model, 'named_steps') and 'model' in model.named_steps:
             y_pred = model.named_steps['model'].predict(X_test)
         else:
             raise ValueError("Model does not have predict method")
