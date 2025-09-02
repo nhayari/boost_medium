@@ -35,11 +35,9 @@ dict_params = {
 
 
 
-# prediction = requests.get(url=f"{url}/predict", params=dict_params)
-
 prediction = requests.post(url=f"{url}/predict", json=dict_params)
 
 
 #Prediction
 if st.button('Prediction'):
-    st.write('The prediction is ',prediction)
+    st.write(prediction)

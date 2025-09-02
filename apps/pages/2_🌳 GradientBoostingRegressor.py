@@ -34,10 +34,9 @@ dict_params = {
 }
 
 
-
 prediction = requests.get(url=url, params=dict_params)
 
 
 #Prediction
 if st.button('Prediction'):
-    st.write('The prediction is ',prediction)
+    st.write(prediction)
