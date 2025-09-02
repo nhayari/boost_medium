@@ -13,7 +13,7 @@ from typing import Optional
 # from keras.callbacks import EarlyStopping
 
 from sklearn.linear_model import LinearRegression, ElasticNet,Ridge
-from sklearn.ensemble import RandomForestRegressor, ExtraTreesRegressor, GradientBoostingRegressor
+from sklearn.ensemble import RandomForestRegressor, ExtraTreesRegressor, GradientBoostingRegressor,RandomTreesEmbedding
 # from sklearn.svm import SVR
 from lightgbm import LGBMRegressor
 from xgboost import XGBRegressor
@@ -65,7 +65,12 @@ implemented_model = {
         'n_estimators': 100,
         'learning_rate':0.1,
         'loss':'absolute_error'
-    }
+    },
+     'RandomTreesEmbedding': {
+        'metrics': ['mae'],
+        'n_estimators':100,
+        'max_depth': 5
+    },
 }
 
 
@@ -379,6 +384,7 @@ def evaluate_pipeline(pipeline: Pipeline, X: pd.DataFrame, y: Optional[pd.Series
 
     print("✅ Pipeline evaluation completed!")
     return metrics
+
 def getRidge(model_dict):
     """
     Initialise model Ridge with params
@@ -435,5 +441,21 @@ def getLGBMRegressor(model_dict):
                          learning_rate=model_dict['learning_rate'],
                          metric=model_dict['metric'],
                          objective=model_dict['objective']
+                         )
+    return model
+
+
+
+def getRandomTreesEmbedding(model_dict):
+    """
+    Initialise model LGBMRegressor with params
+    Args:
+        model_dict (dict): params
+
+    Returns:
+        Model: Initialized model instance
+    """
+    model = RandomTreesEmbedding(n_estimators=model_dict['n_estimators'],
+                         max_depth=model_dict['max_depth']
                          )
     return model
