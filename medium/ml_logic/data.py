@@ -244,6 +244,7 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
 
         # 4. Remove article not from domain name 'medium.com'
         print(f" - Remove articles not on Medium.")
+        print(df.columns)
         if 'domain' in df.columns:
             df = df[df['domain'] == 'medium.com']
 

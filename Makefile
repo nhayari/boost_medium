@@ -1,3 +1,9 @@
+remove_punct=True
+remove_stopwords=True
+content_only=False
+metadata_only=False
+model_is_tree=False
+
 help:
 	@echo "------ 👌Commandes disponibles :"
 	@echo "> make help        - Afficher cette aide"
@@ -14,7 +20,6 @@ help:
 	@echo "> make pred model_name=yourmodel text=yourtext               - text must be in '  '"
 	@echo " ! actually model_name : LGBMRegressor or XGBRegressor or GradientBoostingRegressor or Ridge or ExtraTreesRegressor or RandomForestRegressor or LinearRegression or ElasticNet."
 	@echo "------ ✅ Fin des Commandes."
-
 
 requirments:
 	@echo "------ 🔄 Réinstallation du package..."
