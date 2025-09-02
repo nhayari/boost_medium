@@ -19,7 +19,7 @@ def save_results(model_name: str, params: dict, metrics: dict) -> bool:
 
         # Save params locally
         if params is not None:
-            params_path = os.path.join(PATH_PARAMAS, f"{model_name}_{DATA_SIZE}_{timestamp}.pickle")
+            params_path = os.path.join(PATH_PARAMS, f"{model_name}_{DATA_SIZE}_{timestamp}.pickle")
             with open(params_path, "wb") as file:
                 pickle.dump(params, file)
 
