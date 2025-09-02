@@ -12,15 +12,18 @@ from medium.ml_logic.model import *
 st.set_page_config(page_title="Home Page", page_icon="🏠")
 
 
-st.title('Boost Medium Articles App')
+st.markdown(
+    """
+    <div style='text-align: center;'>
+        <h1>Boost Medium Articles App</h1>
+        <img src='https://raw.githubusercontent.com/nhayari/boost_medium/refs/heads/dev/apps/medium.png' width='300'>
 
 
-CSS = """
-.stApp {
-    background-image: url('medium.png');
-    background-size: cover;
-}
-"""
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
 
 # Vérifier la connexion
 def check_connection():
