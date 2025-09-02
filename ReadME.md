@@ -36,6 +36,18 @@
    - TEST_JSON=path/test.json
    - TARGET_CSV=path/train_log1p_recommends.csv
 
+- Créer les dossiers suivant
+  ```bash
+  mkdir -p ~/medium/data/
+  mkdir -p ~/medium/data/deep_learning
+  mkdir -p ~/medium/params/
+  mkdir -p ~/medium/models/
+  mkdir -p ~/medium/models/deep_learning
+  mkdir -p ~/medium/preprocessor/
+  mkdir -p ~/medium/metrics/
+  mkdir -p ~/medium/prediction/
+  ```
+
 
 ### 🚀 Utilisation
 

@@ -52,3 +52,8 @@ def convert_dict_columns(df: pd.DataFrame, drop_cols = True):
         df_result.drop(columns=cols_to_drop, inplace=True)
 
     return df_result
+
+def read_time(df: pd.DataFrame):
+    df['minutes'] =df['meta_tags_twitter:data1'].apply(lambda x : int(str(x.split()[0])))
+
+    return df

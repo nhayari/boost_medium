@@ -17,7 +17,7 @@ from utils.text_preprocessing import (
 )
 
 
-@pytest.mark.skip(reason="ignoré car il ya un test general : advanced")
+# @pytest.mark.skip(reason="ignoré car il ya un test general : advanced")
 def test_strip_html_content():
     assert strip_html_content("<p>name <b>email</b></p>") == " name  email  "
     assert strip_html_content(None) == ""

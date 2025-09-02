@@ -3,6 +3,7 @@ import string
 from typing import List, Optional
 import pandas as pd
 from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
+#import inflect
 
 # --------- Nettoyage HTML  replacing by space---------
 def strip_html_content(text: str) -> str:
@@ -10,21 +11,38 @@ def strip_html_content(text: str) -> str:
         return ""
     return re.sub(r"<.*?>", " ", text)
 
+
 # --------- Nettoyage basique ---------
 def remove_non_ascii(text: str) -> str:
     return re.sub(r"[^\x00-\x7F]+", " ", text) if isinstance(text, str) else ""
 
+
 def to_lowercase(text: str) -> str:
     return text.lower() if isinstance(text, str) else ""
 
+
 def remove_numbers(text: str) -> str:
     return re.sub(r"\d+", "", text) if isinstance(text, str) else ""
+
+
+# def replace_numbers(words):
+#     """Replace all interger occurrences in list of tokenized words with textual representation"""
+#     p = inflect.engine()
+#     new_words = []
+#     for word in words:
+#         if word.isdigit():
+#             new_word = p.number_to_words(word)
+#             new_words.append(new_word)
+#         else:
+#             new_words.append(word)
+#     return new_words
 
 def remove_punctuation(text: str) -> str:
     return text.translate(str.maketrans("", "", string.punctuation)) if isinstance(text, str) else ""
 
 def remove_extra_whitespace(text: str) -> str:
     return re.sub(r"\s+", " ", text).strip() if isinstance(text, str) else ""
+
 
 # --------- Stopwords (sklearn) ---------
 def remove_stopwords(text: str, language: str = "english") -> str:
@@ -33,6 +51,7 @@ def remove_stopwords(text: str, language: str = "english") -> str:
     tokens = text.split()
     stop_words = ENGLISH_STOP_WORDS if language == "english" else set()
     return " ".join([word for word in tokens if word.lower() not in stop_words])
+
 
 # --------- Tokenization simple ---------
 def tokenize_text(text: str) -> List[str]:
