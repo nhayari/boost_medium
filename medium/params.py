@@ -13,9 +13,9 @@ MODEL_TARGET = os.environ.get("MODEL_TARGET")
 # LOCAL_DATA_PATH = os.path.join(os.path.expanduser('~'), "medium", "data")
 # LOCAL_REGISTRY_PATH =  os.path.join(os.path.expanduser('~'), "medium")
 
-PATH_DATA=os.path.join(os.path.expanduser('~'), "medium", "data")
-PATH_PARAMAS=os.path.join(os.path.expanduser('~'), "medium", "params")
-PATH_METRICS=os.path.join(os.path.expanduser('~'), "medium", "metrics")
-PATH_MODELS=os.path.join(os.path.expanduser('~'), "medium", "models")
-PATH_PREPROCESSOR=os.path.join(os.path.expanduser('~'), "medium", "preprocessor")
-PATH_PREDICTION=os.path.join(os.path.expanduser('~'), "medium", "prediction")
+PATH_DATA= "raw_data/medium/data"
+PATH_PARAMS= "raw_data/medium/params"
+PATH_METRICS= "raw_data/medium/metrics"
+PATH_MODELS= "raw_data/medium/models"
+PATH_PREPROCESSOR= "raw_data/medium/preprocessor"
+PATH_PREDICTION= "raw_data/medium/prediction"
