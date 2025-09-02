@@ -71,6 +71,7 @@ def load_model(model_name: str):
 
         # Get the latest model version name by the timestamp on disk
         local_model_directory = os.path.join(PATH_MODELS,"")
+        print(f"{local_model_directory}/{model_name}_{DATA_SIZE}_*.pickle")
         local_model_paths = glob.glob(f"{local_model_directory}/{model_name}_{DATA_SIZE}_*.pickle")
         print(f" ℹ️  chemin des models : {local_model_directory} ")
         if not local_model_paths:
@@ -78,10 +79,11 @@ def load_model(model_name: str):
             return None
 
         most_recent_model_path_on_disk = sorted(local_model_paths)[-1]
+        print(f"Loading {most_recent_model_path_on_disk}...")
         try:
             with open(most_recent_model_path_on_disk, "rb") as file:
                 model = pickle.load(file)
-                print(f" ✅ load_model() done \n")
+                print(f" ✅ Loaded {most_recent_model_path_on_disk}. \n")
                 return model
         except Exception as e:
             print(f"Error loading model: {e}")
