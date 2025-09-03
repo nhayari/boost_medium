@@ -100,7 +100,7 @@ class Medium:
 
         return X_seq
 
-    def pad_sequences(self, X, max_length=500, padding_type='post', truncating_type='post'):
+    def pad_sequences(self, X, max_length=5000, padding_type='post', truncating_type='post'):
         """
         Pad the sequences to the same length.
         """
