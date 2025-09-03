@@ -16,8 +16,9 @@ df = load_json_from_files(
     num_lines=100
 )
 df = df[df['domain'] == 'medium.com'].copy()
-# Sélection du modèle
-title = st.selectbox('Select Title', df['title'])
+
+
+title = st.selectbox('Select Title',df['title'])
 
 
 # url / author
@@ -33,12 +34,10 @@ dict_params = {
     'title': df[df['title'] == title].to_json()
 }
 
-
-
 prediction = requests.post(url=f"{url}/predict", json=dict_params)
-
 
 #Prediction
 if st.button('Recommandation'):
     st.write('The prediction is',int(round(prediction.json()['recommandations'])))
     st.write('Numbers of recommandations:', int(round(np.expm1(prediction.json()['recommandations']))))
+    st.write('Numbers of real recommandations:', int(round(np.expm1(df[df['title'] == title]['log1p_recommends']))))
