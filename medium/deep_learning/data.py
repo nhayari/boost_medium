@@ -219,3 +219,41 @@ class DeepLearningData:
         df = pd.DataFrame(records)
 
         return df
+
+    def preprocess_for_prediction(self, df: pd.DataFrame) -> pd.DataFrame:
+        print(f"🎬 Data preprocessing started...\n")
+
+        print(f"Columns in DataFrame: {df.columns.tolist()}")
+
+        # 2. Only keep title and content columns
+        print(f" - Keep only title and content columns.")
+        df = df[['title', 'content']].copy()
+
+        df['log_recommends'] = 0  # Dummy target for compatibility
+
+        # 3. Preprocess data
+        print(f" - Preprocess text data (HTML tag removal, whitespace cleanup, etc.)")
+        if self.preprocessor:
+            preprocessed_df = self.preprocessor.transform(df)
+        else:
+            self.preprocessor = MediumPreprocessingPipeline()
+            preprocessed_df = self.preprocessor.fit_transform(df)
+            PreprocessorRegistry().save_preprocessor(self.preprocessor, name='medium_preprocessor')
+
+        # 4. Drop rows with missing values in 'title' or 'content'
+        print(f" - Drop rows with missing values in 'title' or 'content'.")
+        preprocessed_df = preprocessed_df.dropna(subset=['title', 'content'])
+
+        # 5. Concat title and content
+        print(f" - Concatenate 'title' and 'content' into 'full_content'.")
+        preprocessed_df['full_content'] = preprocessed_df['title'] + ' ' + preprocessed_df['content']
+
+        # 6. Only keep full_content
+        print(f" - Keep only 'full_content' columns.")
+        preprocessed_df = preprocessed_df[['full_content']]
+
+        print(f"Columns in DataFrame: {preprocessed_df.columns.tolist()}")
+
+        print("✅ Data preprocessed")
+
+        return preprocessed_df

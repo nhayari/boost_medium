@@ -19,12 +19,12 @@ df = load_json_from_files(
 df = df[df['domain'] == 'medium.com'].copy()
 
 # Sélection du modèle
-title = st.selectbox('Select Title', df['title'])
+medium_title = st.selectbox('Select Title', df['title'])
 
 
 # url / author
-st.write('The url is ', df[df['title'] == title]['url'].values[0])
-st.write('The author is ', df[df['title'] == title]['author'].iloc[0]['twitter'])
+st.write('The url is ', df[df['title'] == medium_title]['url'].values[0])
+st.write('The author is ', df[df['title'] == medium_title]['author'].iloc[0]['twitter'])
 
 
 url = 'http://0.0.0.0:8000' # 'https://boost-medium-docker-759226870731.europe-west1.run.app'
@@ -32,13 +32,13 @@ url = 'http://0.0.0.0:8000' # 'https://boost-medium-docker-759226870731.europe-w
 
 dict_params = {
     'model_name': 'CNN',
-    'title': df[df['title'] == title].to_json()
+    'medium': df[df['title'] == medium_title].to_json()
 }
 
 
-prediction = requests.post(url=f"{url}/predict", json=dict_params)
+prediction = requests.post(url=f"{url}/predict/CNN", json=dict_params)
 
 
 if st.button('Recommandation'):
-    st.write('The prediction is',int(round(prediction.json()['recommandations'])))
-    st.write('Numbers of recommandations:', int(round(np.expm1(prediction.json()['recommandations']))))
+    st.write('The prediction is', float(round(prediction.json()['claps'])))
+    st.write('Numbers of recommandations:', int(round(np.expm1(prediction.json()['claps']))))
