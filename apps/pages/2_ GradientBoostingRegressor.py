@@ -5,7 +5,7 @@ import requests
 import datetime
 from medium.ml_logic.data import load_json_from_files
 
-st.set_page_config(page_title="GradientBoostingRegressor Model Page", page_icon="🌳")
+st.set_page_config(page_title="GradientBoostingRegressor Model Page")
 
 st.title("GradientBoostingRegressor Model ")
 
@@ -42,3 +42,4 @@ prediction = requests.post(url=f"{url}/predict", json=dict_params)
 if st.button('Recommandation'):
     st.write('The prediction is',int(round(prediction.json()['recommandations'])))
     st.write('Numbers of recommandations:', int(round(np.expm1(prediction.json()['recommandations']))))
+    st.write('Numbers of real recommandations:', int(round(np.expm1(df[df['title'] == title]['log1p_recommends']))))

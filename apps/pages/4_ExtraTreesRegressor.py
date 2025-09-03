@@ -5,9 +5,9 @@ import requests
 import datetime
 from medium.ml_logic.data import load_json_from_files
 
-st.set_page_config(page_title="Ridge Model Page")
+st.set_page_config(page_title="ExtraTreesRegressor Model Page")
 
-st.title("Ridge Model ")
+st.title("ExtraTreesRegressor Model ")
 
 
 df = load_json_from_files(
