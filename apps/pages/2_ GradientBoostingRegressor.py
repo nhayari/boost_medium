@@ -5,7 +5,7 @@ import requests
 import datetime
 from medium.ml_logic.data import load_json_from_files
 
-st.set_page_config(page_title="GradientBoostingRegressor Model Page", page_icon="🌳")
+st.set_page_config(page_title="GradientBoostingRegressor Model Page")
 
 st.title("GradientBoostingRegressor Model ")
 
