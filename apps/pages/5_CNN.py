@@ -40,5 +40,5 @@ prediction = requests.post(url=f"{url}/predict/CNN", json=dict_params)
 
 
 if st.button('Recommandation'):
-    st.write('The prediction is', float(round(prediction.json()['claps'])))
-    st.write('Numbers of recommandations:', int(round(np.expm1(prediction.json()['claps']))))
+    st.write('Numbers of recommandations:', prediction.json()['claps'])
+    st.write('Numbers of real recommandations:', int(round(np.expm1(df[df['title'] == medium_title]['log1p_recommends']))))

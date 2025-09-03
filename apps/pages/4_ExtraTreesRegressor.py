@@ -30,13 +30,13 @@ url = 'http://0.0.0.0:8000' # 'https://boost-medium-docker-759226870731.europe-w
 
 
 dict_params = {
-    'model_name': 'ExtraTreesRegressor_punct_removed_stopwords_removed',
-    'title': df[df['title'] == title].to_json()
+    'model_name': 'ExtraTreesRegressor',
+    'medium': df[df['title'] == title].to_json()
 }
 
 prediction = requests.post(url=f"{url}/predict", json=dict_params)
 
 #Prediction
 if st.button('Recommandation'):
-    st.write('Numbers of recommandations:', int(round(np.expm1(prediction.json()['recommandations']))))
+    st.write('Numbers of recommandations:', prediction.json()['claps'])
     st.write('Numbers of real recommandations:', int(round(np.expm1(df[df['title'] == title]['log1p_recommends']))))
