@@ -15,7 +15,17 @@ from medium.deep_learning.registry import ModelRegistry, PreprocessorRegistry
 
 app = FastAPI()
 
-# app.state.model = load_model(model_name='Ridge')
+app.state.models = {
+    'ML': {
+        'Ridge': load_model(model_identifier='Ridge_punct_removed_stopwords_removed_data_scaled'),
+        'GradientBoostingRegressor': load_model(model_identifier='GradientBoostingRegressor_punct_removed_stopwords_removed'),
+        'ExtraTreesRegressor': load_model(model_identifier='ExtraTreesRegressor_punct_removed_stopwords_removed'),
+        'RandomForest': load_model(model_identifier='RandomForestRegressor_punct_removed_stopwords_removed')
+    },
+    'DL': {
+        'CNN': ModelRegistry().get_model('CNN')
+    }
+}
 
 
 
@@ -36,12 +46,16 @@ async def predict(request: Request):
     Assumes `text` is provided by the user
     """
     request_data = await request.json()
-    request_data['title'] = json.loads(request_data['title'])
-    model = load_model(model_identifier=request_data['model_name'])
-    df_title = pd.DataFrame(request_data['title'])
+    request_data['medium'] = json.loads(request_data['medium'])
+    model = app.state.models['ML'][request_data['model_name']]
+    df_title = pd.DataFrame(request_data['medium'])
     y_pred = model.predict(df_title)
-    print(np.expm1(y_pred))
-    return {'recommandations': float(y_pred)}
+
+    return {
+        'model' : request_data['model_name'],
+        'log1p' : float(y_pred),
+        'claps' : int(np.expm1(y_pred))
+    }
 
 
 @app.post("/predict/CNN")
@@ -53,7 +67,7 @@ async def predict_CNN(request: Request):
     medium_df = pd.DataFrame(json.loads(request_data['medium']))
 
     # Load the CNN model
-    model = ModelRegistry().get_model('CNN')
+    model = app.state.models['DL']['CNN']
 
     # Init Medium instance
     medium_instance = Medium(model=model)
@@ -70,7 +84,8 @@ async def predict_CNN(request: Request):
 
     return {
         'model' : model.name,
-        'claps' : float(y_pred)
+        'log1p' : float(y_pred),
+        'claps' : int(np.expm1(y_pred))
     }
 
 
