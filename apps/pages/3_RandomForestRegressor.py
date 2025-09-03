@@ -30,7 +30,7 @@ url = 'http://0.0.0.0:8000' # 'https://boost-medium-docker-759226870731.europe-w
 
 
 dict_params = {
-    'model_name': 'Ridge_punct_removed_stopwords_removed_data_scaled',
+    'model_name': 'RandomForestRegressor_punct_removed_stopwords_removed',
     'title': df[df['title'] == title].to_json()
 }
 

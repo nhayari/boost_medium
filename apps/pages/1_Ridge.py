@@ -18,12 +18,19 @@ df = load_json_from_files(
 df = df[df['domain'] == 'medium.com'].copy()
 
 
-title = st.selectbox('Select Title',df['title'])
+df_title_selected = ['Are you a journalist? Download this free guide for verifying photos and videos',
+                     "How To Grow Your Company: Don’t Use Facebook – Rodrigo Tello – Medium"]
+
+
+title = st.selectbox('Select Title',df_title_selected)
 
 
 # url / author
 st.write('The url is ', df[df['title'] == title]['url'].values[0])
 st.write('The author is ', df[df['title'] == title]['author'].iloc[0]['twitter'])
+
+
+
 
 
 url = 'http://0.0.0.0:8000' # 'https://boost-medium-docker-759226870731.europe-west1.run.app'
