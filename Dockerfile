@@ -8,6 +8,8 @@ RUN pip install -r requirements.txt
 COPY . .
 RUN pip install .
 
-RUN python -m nltk.downloader all
+RUN python -m nltk.downloader punkt
+RUN python -m nltk.downloader punkt_tab
+RUN python -m nltk.downloader wordnet
 
 CMD uvicorn medium.api.fast:app --host 0.0.0.0 --port $PORT --reload

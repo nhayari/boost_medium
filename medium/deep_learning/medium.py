@@ -4,8 +4,9 @@ from medium.params import *
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Conv1D, MaxPooling1D, Flatten
+from tensorflow.keras.layers import Conv1D, MaxPooling1D, Flatten, GlobalMaxPooling1D
 from tensorflow.keras.layers import Embedding, LSTM, Dense, Dropout
+from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
 
 class Medium:
 
@@ -99,7 +100,7 @@ class Medium:
 
         return X_seq
 
-    def pad_sequences(self, X, max_length=500, padding_type='post', truncating_type='post'):
+    def pad_sequences(self, X, max_length=5000, padding_type='post', truncating_type='post'):
         """
         Pad the sequences to the same length.
         """
@@ -154,7 +155,7 @@ class Medium:
 
         return self
 
-    def build_CNN_model(self, embedding_dim=64):
+    def build_CNN_model(self, embedding_dim=128):
         """
         Build a simple CNN(Convolutional Neural Network) model for text regression.
         """
@@ -165,12 +166,18 @@ class Medium:
         max_length = self.get_max_sequence_length()
 
         model = Sequential([
-            Embedding(input_dim=vocab_size, output_dim=embedding_dim, input_length=max_length),
-            Conv1D(128, 5, activation='relu'),
-            MaxPooling1D(pool_size=2),
-            Flatten(),
-            Dense(1, activation='linear')  # Linear activation for regression
-        ])
+        Embedding(input_dim=vocab_size, output_dim=embedding_dim, input_length=max_length),
+        Conv1D(128, 5, activation='relu', padding='same'),
+        MaxPooling1D(pool_size=2),
+        Dropout(0.3),
+        Conv1D(64, 3, activation='relu', padding='same'),
+        MaxPooling1D(pool_size=2),
+        Dropout(0.3),
+        GlobalMaxPooling1D(),
+        Dense(64, activation='relu'),
+        Dropout(0.2),
+        Dense(1, activation='linear')  # Linear activation for regression
+    ])
 
         model.compile(optimizer='adam', loss='mean_squared_error', metrics=['mae'])
         model.name = "CNN"
@@ -179,7 +186,7 @@ class Medium:
 
         return self
 
-    def fit(self, epochs=5, batch_size=32, save=True):
+    def fit(self, epochs=20, batch_size=64):
         """
         Fit the model to the training data.
         """
@@ -190,20 +197,23 @@ class Medium:
             print("⚠️ Model is already fitted.")
             return self
 
+        callbacks = [
+            EarlyStopping(monitor='val_loss', patience=3, restore_best_weights=True),
+            ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=2)
+        ]
+
         print("🎬 Model training started...\n")
         self.model.fit(
             self.X_train_pad,
             self.y_train,
             epochs=epochs,
             batch_size=batch_size,
-            validation_data=(self.X_val_pad, self.y_val)
+            validation_data=(self.X_val_pad, self.y_val),
+            callbacks=callbacks,
+            verbose=2
         )
         self.is_fitted = True
         print("✅ Model training completed")
-
-        # Optionally, save the model
-        if save:
-            self.model.save("text_regression_model.h5")
 
         return self
 
