@@ -41,7 +41,7 @@ clean:
 
 clean_data:
 	@echo "------ 🧹 Nettoyage des données préprocessées..."
-	@rm -f ~/medium/data/df_*processed*.csv
+	@rm -f /raw_data/medium/df_*processed*.csv
 	@echo "------ ✅ Données préprocessées supprimées."
 
 clean_models:

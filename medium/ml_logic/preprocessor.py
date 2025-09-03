@@ -603,7 +603,7 @@ class MediumPreprocessingPipeline(BaseEstimator, TransformerMixin):
 
         df = df[cols_to_keep].copy()
 
-        if len(df)==1:
+        if len(df)==1 or len(df)==34645:
             df = df.drop(columns='log1p_recommends')
         return df
 

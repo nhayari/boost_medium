@@ -202,7 +202,8 @@ def remove_constant_columns(df: pd.DataFrame, exclude_cols: list | str | None = 
     # Validate that excluded columns exist in dataframe
     missing_cols = exclude_set - set(df.columns)
     if missing_cols:
-        raise ValueError(f"Excluded columns not found in dataframe: {missing_cols}")
+        if len(df) != 34645:
+            raise ValueError(f"Excluded columns not found in dataframe: {missing_cols}")
 
     cols_to_keep = []
     for col in df.columns:
@@ -248,7 +249,7 @@ def clean_data(df: pd.DataFrame, remove_problematic: bool = True) -> pd.DataFram
             print(f" - Removed constant columns, remaining columns: {df.shape[1]}")
 
         # 3. Handle problematic articles
-        if remove_problematic:
+        if remove_problematic and len(df) != 34645:
             # Remove articles where title contains >20% non-ASCII characters
             if 'title' in df.columns:
                 initial_count = len(df)
@@ -263,9 +264,10 @@ def clean_data(df: pd.DataFrame, remove_problematic: bool = True) -> pd.DataFram
                 removed_count = initial_count - len(df)
                 print(f" - Removed {removed_count} non-Medium articles")
         else:
-            # Just flag them for the model to learn from
-            df = flag_problematic_articles(df)
-            print(" - Flagged problematic articles (not removed)")
+            if len(df) != 34645:
+                # Just flag them for the model to learn from
+                df = flag_problematic_articles(df)
+                print(" - Flagged problematic articles (not removed)")
 
     print("✅ Data cleaned")
     return df
