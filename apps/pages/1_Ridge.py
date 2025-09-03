@@ -18,7 +18,16 @@ df = load_json_from_files(
 df = df[df['domain'] == 'medium.com'].copy()
 
 
-title = st.selectbox('Select Title',df['title'])
+df_title_selected = ['Are you a journalist? Download this free guide for verifying photos and videos',
+                     "How To Grow Your Company: Don’t Use Facebook – Rodrigo Tello – Medium",
+                     "Ideas to start saving for your own Round-The-World Trip or just about anything",
+                     "Jesus Goes to Africa – The Bigger Picture – Medium",
+                     "200+ Podcasts, 100+ Articles, 20+ Books… In 11 Bullet Points"
+
+]
+
+
+title = st.selectbox('Select Title',df_title_selected)
 
 
 # url / author
@@ -38,6 +47,5 @@ prediction = requests.post(url=f"{url}/predict", json=dict_params)
 
 #Prediction
 if st.button('Recommandation'):
-    st.write('The prediction is',int(round(prediction.json()['recommandations'])))
     st.write('Numbers of recommandations:', int(round(np.expm1(prediction.json()['recommandations']))))
     st.write('Numbers of real recommandations:', int(round(np.expm1(df[df['title'] == title]['log1p_recommends']))))
