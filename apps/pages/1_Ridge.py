@@ -22,8 +22,8 @@ df_title_selected = ['Are you a journalist? Download this free guide for verifyi
                      "How To Grow Your Company: Don’t Use Facebook – Rodrigo Tello – Medium",
                      "Ideas to start saving for your own Round-The-World Trip or just about anything",
                      "Jesus Goes to Africa – The Bigger Picture – Medium",
-                     "200+ Podcasts, 100+ Articles, 20+ Books… In 11 Bullet Points"
-
+                     "200+ Podcasts, 100+ Articles, 20+ Books… In 11 Bullet Points",
+                     "We’re seeking design thinkers, talented tinkerers and wannabe surfers…"
 ]
 
 
