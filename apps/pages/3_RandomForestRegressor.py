@@ -7,7 +7,13 @@ from medium.ml_logic.data import load_json_from_files
 
 st.set_page_config(page_title="RandomForestRegressor Model Page")
 
-st.title("RandomForestRegressor Model ")
+
+st.markdown(
+    """
+    <h1 style='text-align: center; color: white;'>🌴 RandomForestRegressor Model </h1>
+    """,
+    unsafe_allow_html=True
+)
 
 
 df = load_json_from_files(
@@ -44,6 +50,6 @@ dict_params = {
 prediction = requests.post(url=f"{url}/predict", json=dict_params)
 
 #Prediction
-if st.button('Recommandation'):
-    st.write('Numbers of recommandations:', int(round(np.expm1(prediction.json()['recommandations']))))
-    st.write('Numbers of real recommandations:', int(round(np.expm1(df[df['title'] == title]['log1p_recommends']))))
+if st.button("📊 Show Number of Claps"):
+    st.write('**👏 Claps predicted:**', int(round(np.expm1(prediction.json()['recommandations']))))
+    st.write('**✅ Real claps on extraction:**', int(round(np.expm1(df[df['title'] == title]['log1p_recommends']))))

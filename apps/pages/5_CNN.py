@@ -7,8 +7,12 @@ from medium.ml_logic.data import load_json_from_files
 
 st.set_page_config(page_title="CNN Model Page")
 
-st.title("CNN Model ")
-
+st.markdown(
+    """
+    <h1 style='text-align: center; color: white;'>🧊 CNN Model </h1>
+    """,
+    unsafe_allow_html=True
+)
 
 df = load_json_from_files(
     X_filepath='raw_data/X_test.json',
@@ -48,6 +52,6 @@ dict_params = {
 prediction = requests.post(url=f"{url}/predict/CNN", json=dict_params)
 
 
-if st.button('Recommandation'):
-    st.write('The prediction is', float(round(prediction.json()['claps'])))
-    st.write('Numbers of recommandations:', int(round(np.expm1(prediction.json()['claps']))))
+if st.button("📊 Show Number of Claps"):
+    st.write('**👏 Claps predicted:**', float(round(prediction.json()['claps'])))
+    st.write('**✅ Real claps on extraction:**', int(round(np.expm1(prediction.json()['claps']))))

@@ -11,11 +11,18 @@ from medium.ml_logic.model import *
 
 st.set_page_config(page_title="Home Page", page_icon="🏠")
 
+# Set background color
+st.markdown(
+    """
+    <h1 style='text-align: center; color: white;'>🚀 Boost Medium Articles App</h1>
+    """,
+    unsafe_allow_html=True
+)
 
+# Display image
 st.markdown(
     """
     <div style='text-align: center;'>
-        <h1>Boost Medium Articles App</h1>
         <img src='https://raw.githubusercontent.com/nhayari/boost_medium/refs/heads/dev/apps/medium.png' width='300'>
 
 
@@ -24,27 +31,30 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# Vérifier la connexion
-def check_connection():
-    return time.time() % 10 > 5  # connecté si le modulo > 5
+# Intro text
+st.markdown(
+    """
+    <div style="text-align: left; font-size:18px; line-height:1.6;">
+    Welcome to our prediction app, powered by <b>5 complementary models</b>:
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
-st.header("Indicateur de connexion")
+# List of models
+st.markdown("""
+- A **Deep Learning model (CNN)**,
+- And four **Machine Learning models**: **Ridge**, **ExtraTreesRegressor**, **GradientBoostingRegressor**, and **RandomForestRegressor**.
+This diverse set of approaches ensures robustness, accuracy, and adaptability to the data.
+""")
 
-# Bouton cliquable
-if st.button("🔄 Vérifier la connexion"):
-    connected = check_connection()
-
-    if connected:
-        st.markdown(
-            "<div style='width:20px;height:20px;border-radius:50%;background-color:green;'></div>",
-            unsafe_allow_html=True
-        )
-        st.success("You're connected ! ✅")
-    else:
-        st.markdown(
-            "<div style='width:20px;height:20px;border-radius:50%;background-color:red;'></div>",
-            unsafe_allow_html=True
-        )
-        st.error("You're not connected! ❌")
-else:
-    st.info("Clique sur le bouton pour vérifier ta connexion 🚀")
+# Additional info
+st.markdown(
+    """
+    <div style="text-align: left; font-size:18px; line-height:1.6;">
+    Our app is designed to help you predict the number of claps your Medium articles might receive.
+    Whether you're a seasoned writer or just starting out, our models can provide valuable insights to enhance your content strategy.
+    </div>
+    """,
+    unsafe_allow_html=True
+)
