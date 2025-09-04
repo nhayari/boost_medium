@@ -2,8 +2,8 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import requests
-import datetime
-from medium.ml_logic.data import load_json_from_files
+
+from data import get_author
 
 st.set_page_config(page_title="Ridge Model Page")
 
@@ -16,12 +16,7 @@ st.markdown(
 )
 
 
-df = load_json_from_files(
-    X_filepath='raw_data/X_test.json',
-    y_filepath='raw_data/y_test.csv',
-    num_lines=100
-)
-df = df[df['domain'] == 'medium.com'].copy()
+
 
 
 df_title_selected = ['Are you a journalist? Download this free guide for verifying photos and videos',
@@ -32,13 +27,17 @@ df_title_selected = ['Are you a journalist? Download this free guide for verifyi
                      "We’re seeking design thinkers, talented tinkerers and wannabe surfers…"
 ]
 
+df = pd.read_parquet('apps/mediums.parquet')
 
 title = st.selectbox('Select Title',df_title_selected)
 
+selected_medium = df[df['title'] == title]
+selected_medium['author'] = selected_medium.apply(get_author, axis=1)
+
 
 # url / author
-st.write('The url is ', df[df['title'] == title]['url'].values[0])
-st.write('The author is ', df[df['title'] == title]['author'].iloc[0]['twitter'])
+st.write('The url is ', selected_medium['url'].values[0])
+st.write('The author is ', selected_medium['author'].values[0])
 
 
 url = st.secrets["medium_api_url"]
