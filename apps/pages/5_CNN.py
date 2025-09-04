@@ -52,5 +52,5 @@ dict_params = {
 prediction = requests.post(url=f"{url}/predict/CNN", json=dict_params)
 
 if st.button("📊 Show Number of Claps"):
-    st.write('**👏 Claps predicted:**', float(round(prediction.json()['claps'])))
-    st.write('**✅ Real claps on extraction:**', int(round(np.expm1(prediction.json()['claps']))))
+    st.write('**👏 Claps predicted:**', prediction.json()['claps'])
+    st.write('**✅ Real claps on extraction:**', int(round(np.expm1(df[df['title'] == medium_title]['log1p_recommends']))))
