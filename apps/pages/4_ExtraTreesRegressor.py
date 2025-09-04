@@ -7,13 +7,8 @@ from medium.ml_logic.data import load_json_from_files
 
 st.set_page_config(page_title="ExtraTreesRegressor Model Page")
 
+st.title("ExtraTreesRegressor Model ")
 
-st.markdown(
-    """
-    <h1 style='text-align: center; color: white;'>🌲 ExtraTreesRegressor Model </h1>
-    """,
-    unsafe_allow_html=True
-)
 
 df = load_json_from_files(
     X_filepath='raw_data/X_test.json',
@@ -51,5 +46,5 @@ prediction = requests.post(url=f"{url}/predict", json=dict_params)
 
 #Prediction
 if st.button("📊 Show Number of Claps"):
-    st.write('**👏 Claps predicted:**', int(round(np.expm1(prediction.json()['recommandations']))))
+    st.write('**👏 Claps predicted:**', prediction.json()['claps'])
     st.write('**✅ Real claps on extraction:**', int(round(np.expm1(df[df['title'] == title]['log1p_recommends']))))
