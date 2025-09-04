@@ -2,8 +2,8 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import requests
-import datetime
-from medium.ml_logic.data import load_json_from_files
+
+from data import get_author
 
 st.set_page_config(page_title="CNN Model Page")
 
@@ -14,13 +14,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-df = load_json_from_files(
-    X_filepath='raw_data/X_test.json',
-    y_filepath='raw_data/y_test.csv',
-    num_lines=100
-)
-
-df = df[df['domain'] == 'medium.com'].copy()
+df = pd.read_parquet('apps/mediums.parquet')
 
 
 df_title_selected = ['Are you a journalist? Download this free guide for verifying photos and videos',
@@ -31,13 +25,16 @@ df_title_selected = ['Are you a journalist? Download this free guide for verifyi
                      "We’re seeking design thinkers, talented tinkerers and wannabe surfers…"
 ]
 
-# Sélection du modèle
-medium_title = st.selectbox('Select Title',df_title_selected)
+
+title = st.selectbox('Select Title',df_title_selected)
+
+selected_medium = df[df['title'] == title]
+selected_medium['author'] = selected_medium.apply(get_author, axis=1)
 
 
 # url / author
-st.write('The url is ', df[df['title'] == medium_title]['url'].values[0])
-st.write('The author is ', df[df['title'] == medium_title]['author'].iloc[0]['twitter'])
+st.write('The url is ', selected_medium['url'].values[0])
+st.write('The author is ', selected_medium['author'].values[0])
 
 
 url = st.secrets["medium_api_url"]
@@ -45,7 +42,7 @@ url = st.secrets["medium_api_url"]
 
 dict_params = {
     'model_name': 'CNN',
-    'medium': df[df['title'] == medium_title].to_json()
+    'medium': df[df['title'] == title].to_json()
 }
 
 
@@ -53,4 +50,4 @@ prediction = requests.post(url=f"{url}/predict/CNN", json=dict_params)
 
 if st.button("📊 Show Number of Claps"):
     st.write('**👏 Claps predicted:**', prediction.json()['claps'])
-    st.write('**✅ Real claps on extraction:**', int(round(np.expm1(df[df['title'] == medium_title]['log1p_recommends']))))
+    st.write('**✅ Real claps on extraction:**', int(round(np.expm1(df[df['title'] == title]['log1p_recommends']))))
