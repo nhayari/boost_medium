@@ -42,12 +42,13 @@ url = 'http://0.0.0.0:8000'
 
 
 dict_params = {
-    'model_name': 'GradientBoostingRegressor_punct_removed_stopwords_removed',
-    'title': df[df['title'] == title].to_json()
+    'model_name': 'GradientBoostingRegressor',
+    'medium': df[df['title'] == title].to_json()
 }
 
 
 prediction = requests.post(url=f"{url}/predict", json=dict_params)
+
 
 
 if st.button("📊 Show Number of Claps"):

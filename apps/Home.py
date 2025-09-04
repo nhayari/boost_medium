@@ -1,12 +1,8 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-from medium.ml_logic.registry import load_model
+
 import time
-import datetime
-import requests
-from medium.api.fast import predict
-from medium.ml_logic.model import *
 
 
 st.set_page_config(page_title="Home Page", page_icon="🏠")

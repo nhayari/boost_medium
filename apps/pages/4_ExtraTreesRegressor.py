@@ -43,8 +43,8 @@ url = 'http://0.0.0.0:8000' # 'https://boost-medium-docker-759226870731.europe-w
 
 
 dict_params = {
-    'model_name': 'ExtraTreesRegressor_punct_removed_stopwords_removed',
-    'title': df[df['title'] == title].to_json()
+    'model_name': 'ExtraTreesRegressor',
+    'medium': df[df['title'] == title].to_json()
 }
 
 prediction = requests.post(url=f"{url}/predict", json=dict_params)
