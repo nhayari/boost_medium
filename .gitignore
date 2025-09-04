@@ -31,3 +31,6 @@ mlruns
 
 # Windows image file caches
 *.Zone.Identifier
+
+
+.streamlit

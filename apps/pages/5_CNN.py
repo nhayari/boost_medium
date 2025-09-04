@@ -36,7 +36,7 @@ st.write('The url is ', df[df['title'] == medium_title]['url'].values[0])
 st.write('The author is ', df[df['title'] == medium_title]['author'].iloc[0]['twitter'])
 
 
-url = 'http://0.0.0.0:8000' # 'https://boost-medium-docker-759226870731.europe-west1.run.app'
+url = st.secrets["medium_api_url"]
 
 
 dict_params = {
