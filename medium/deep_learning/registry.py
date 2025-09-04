@@ -22,7 +22,12 @@ class ModelRegistry():
         self.models[name] = model
 
     def get_model(self, name):
-        return self.models.get(name)
+        if name not in self.models:
+            model = self.load_model(name)
+        else:
+            model = self.models[name]
+
+        return model
 
     def remove_model(self, name):
         if name in self.models:
@@ -65,7 +70,12 @@ class PreprocessorRegistry():
         self.preprocessors[name] = preprocessor
 
     def get_preprocessor(self, name):
-        return self.preprocessors.get(name)
+        if name not in self.preprocessors:
+            preprocessor = self.load_preprocessor(name)
+        else:
+            preprocessor = self.preprocessors[name]
+
+        return preprocessor
 
     def remove_preprocessor(self, name):
         if name in self.preprocessors:
@@ -109,6 +119,7 @@ class PreprocessorRegistry():
                 with open(most_recent_preprocessor_path_on_disk, "rb") as file:
                     preprocessor = pickle.load(file)
                     print(f"✅ Loaded preprocessor {name}. \n")
+                    self.register_preprocessor(name, preprocessor)
                     return preprocessor
             except Exception as e:
                 print(f"Error loading preprocessor: {e}")

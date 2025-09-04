@@ -8,7 +8,7 @@ services:
     environment :
       - PORT=8000
     volumes:
-      - ./medium:/app/boost_medium
-      - ./requirements.txt:/app/requirements.txt
+      - .:/boost_medium
+      - ./requirements.txt:/boost_medium/requirements.txt
     env_file:
       - .env

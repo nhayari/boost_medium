@@ -25,5 +25,3 @@ uvicorn
 
 #deep learning
 gensim
-tensorflow
-xgboost

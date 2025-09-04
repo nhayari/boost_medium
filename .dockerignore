@@ -1,4 +1,7 @@
-raw_data/
+raw_data/*
+!raw_data/medium/
+!raw_data/medium/**
+
 .env
 .env.yaml
 .envrc
