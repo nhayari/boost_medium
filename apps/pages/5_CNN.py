@@ -49,5 +49,6 @@ dict_params = {
 prediction = requests.post(url=f"{url}/predict/CNN", json=dict_params)
 
 if st.button("📊 Show Number of Claps"):
-    st.write('**👏 Claps predicted:**', prediction.json()['claps'])
-    st.write('**✅ Real claps on extraction:**', int(round(np.expm1(df[df['title'] == title]['log1p_recommends']))))
+    st.subheader(f'**👏 Claps predicted:** {prediction.json()["claps"]}', anchor=False)
+    real_clap = int(round(np.expm1(df[df['title'] == title]['log1p_recommends'])))
+    st.subheader(f'**✅ Real claps on extraction:** {real_clap}', anchor=False)
